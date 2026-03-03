@@ -1,0 +1,11 @@
+// Tests.xcconfig
+// Test configuration for UI tests
+
+#include "Shared.xcconfig"
+
+// ==========================================
+// Test Target Settings
+// ==========================================
+PRODUCT_BUNDLE_IDENTIFIER = com.twintipsolutions.guthealth
+TEST_TARGET_NAME = GutHealth
+PRODUCT_MODULE_NAME = $(PRODUCT_NAME)UITests

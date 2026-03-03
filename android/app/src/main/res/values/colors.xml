@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="teal_primary">#FF2AA6A6</color>
+    <color name="teal_dark">#FF1E8A8A</color>
+    <color name="green_secondary">#FF4CAF50</color>
+    <color name="background_light">#FFF5FAF9</color>
+    <color name="surface_light">#FFFFFFFF</color>
+</resources>

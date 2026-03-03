@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+.build/
+.swiftpm/
+Pods/
+
+# Build outputs
+ios/build/
+ios/DerivedData/
+ios/GutHealthPackage/.build/
+android/app/build/
+android/build/
+android/.gradle/
+functions/lib/
+
+# Secrets & credentials
+.env
+.env.*
+*.p12
+*.mobileprovision
+*.keystore
+google-services.json
+GoogleService-Info.plist
+firebase-debug.log
+firestore-debug.log
+
+# IDE
+.idea/
+*.xcuserdata/
+*.xcworkspace/xcuserdata/
+.vscode/
+*.swp
+.DS_Store
+
+# Website
+website/.next/
+website/node_modules/
+website/out/
+
+# Test assets (large binary files)
+test_assets/
+
+# Package locks (keep these actually)
+!functions/package-lock.json
+!website/package-lock.json
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+functions/check_token.js
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Build logs
+ios_build_log.txt
+
+# Vercel
+website/.vercel/

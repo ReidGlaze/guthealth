@@ -1,0 +1,32 @@
+// Shared.xcconfig
+// Shared build configuration for GutHealth iOS project
+
+// ==========================================
+// Project Identity
+// ==========================================
+PRODUCT_NAME = GutHealth
+PRODUCT_BUNDLE_IDENTIFIER = com.twintipsolutions.guthealth
+MARKETING_VERSION = 1.0
+CURRENT_PROJECT_VERSION = 1
+
+// ==========================================
+// Platform Configuration
+// ==========================================
+IPHONEOS_DEPLOYMENT_TARGET = 18.0
+TARGETED_DEVICE_FAMILY = 1,2
+
+// ==========================================
+// Info PLIST
+// ==========================================
+GENERATE_INFOPLIST_FILE = YES
+INFOPLIST_KEY_CFBundleDisplayName = AI Gut Health
+INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait
+INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+INFOPLIST_KEY_NSCameraUsageDescription = AI Gut Health needs camera access to scan food and track bowel movements
+INFOPLIST_KEY_NSPhotoLibraryUsageDescription = AI Gut Health needs photo library access to select food photos for analysis
+INFOPLIST_KEY_UILaunchScreen_Generation = YES
+
+// ==========================================
+// Entitlements
+// ==========================================
+CODE_SIGN_ENTITLEMENTS = Config/GutHealth.entitlements
