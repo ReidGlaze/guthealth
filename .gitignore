@@ -48,10 +48,14 @@ test_assets/
 .firebase/
 firebase-debug.log
 firestore-debug.log
-functions/check_token.js
+functions/*.js
+!functions/firebase-debug.log
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Build output (archives)
+build/
 
 # Build logs
 ios_build_log.txt

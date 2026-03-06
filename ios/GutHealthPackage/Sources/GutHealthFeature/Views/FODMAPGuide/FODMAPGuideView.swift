@@ -5,70 +5,95 @@ public struct FODMAPGuideView: View {
     @State private var foods: [FodmapFood] = []
     @State private var isLoading = false
     @State private var selectedFilter: FodmapLevel? = nil
-    @State private var userProfile: UserProfile?
-
-    private let authService = AuthService.shared
+    @State private var isInfoExpanded = false
 
     public init() {}
 
     public var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                phaseTracker(userProfile)
+                searchBar
+                fodmapInfoCard
                 filterChips
                 foodList
             }
             .background(AppColors.background)
             .navigationTitle("FODMAP Guide")
-            .searchable(text: $searchText, prompt: "Search foods...")
+            .navigationBarTitleDisplayMode(.inline)
             .task { await loadData() }
             .refreshable { await loadData() }
         }
     }
 
-    // MARK: - Phase Tracker
+    // MARK: - Search Bar
 
-    private func phaseTracker(_ profile: UserProfile?) -> some View {
-        let currentPhase = profile?.fodmapPhase ?? .elimination
-        let startDate = profile?.fodmapPhaseStartDate ?? Date()
+    private var searchBar: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(AppColors.textTertiary)
+            TextField("Search foods...", text: $searchText)
+                .font(AppTypography.body)
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+        }
+        .padding(AppSpacing.sm)
+        .background(AppColors.surface)
+        .cornerRadius(AppRadius.md)
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.top, AppSpacing.sm)
+    }
 
-        return VStack(spacing: AppSpacing.sm) {
+    // MARK: - What is FODMAP? Info Card
+
+    private var fodmapInfoCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Your FODMAP Phase")
+                Image(systemName: "info.circle.fill")
+                    .foregroundColor(AppColors.primary)
+                Text("What is FODMAP?")
                     .font(AppTypography.headline)
                     .foregroundColor(AppColors.text)
                 Spacer()
+                Image(systemName: isInfoExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
             }
-
-            HStack(spacing: 0) {
-                ForEach(FodmapPhase.allCases, id: \.self) { phase in
-                    phaseSegment(phase, isActive: currentPhase == phase, isCurrent: currentPhase == phase)
+            .padding(.vertical, AppSpacing.xs)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isInfoExpanded.toggle()
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
 
-            HStack(spacing: AppSpacing.sm) {
-                Image(systemName: phaseIcon(currentPhase))
-                    .foregroundColor(AppColors.primary)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(phaseTitle(currentPhase))
-                        .font(AppTypography.subhead)
-                        .foregroundColor(AppColors.text)
-                    Text(phaseDescription(currentPhase))
-                        .font(AppTypography.caption1)
+            if isInfoExpanded {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("FODMAPs (Fermentable Oligosaccharides, Disaccharides, Monosaccharides, and Polyols) are short-chain carbohydrates that can cause bloating, gas, and digestive discomfort, especially for those with IBS.\n\nThis guide helps you identify high and low FODMAP foods. Use it with the app's meal logging and correlation analysis to discover your personal triggers.")
+                        .font(AppTypography.footnote)
                         .foregroundColor(AppColors.textSecondary)
-                }
-                Spacer()
-                Text(daysSinceStart(startDate))
-                    .font(AppTypography.caption1)
-                    .foregroundColor(AppColors.primary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        Text("Color Legend")
+                            .font(AppTypography.caption1)
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppColors.text)
+                        legendRow(color: AppColors.fodmapLow, label: "Low", detail: "Generally well-tolerated")
+                        legendRow(color: AppColors.fodmapModerate, label: "Moderate", detail: "May trigger in larger portions")
+                        legendRow(color: AppColors.fodmapHigh, label: "High", detail: "Common trigger for sensitive individuals")
+                    }
+                    .padding(AppSpacing.sm)
                     .background(AppColors.primaryContainer)
                     .cornerRadius(AppRadius.sm)
+                }
+                .padding(.top, AppSpacing.sm)
             }
-
-            phaseTips(currentPhase)
         }
         .padding(AppSpacing.md)
         .cardStyle()
@@ -76,103 +101,19 @@ public struct FODMAPGuideView: View {
         .padding(.top, AppSpacing.sm)
     }
 
-    private func phaseSegment(_ phase: FodmapPhase, isActive: Bool, isCurrent: Bool) -> some View {
-        let isReached = phaseOrder(phase) <= phaseOrder(userProfile?.fodmapPhase ?? .elimination)
-        return VStack(spacing: 2) {
-            Text(phase.rawValue.capitalized)
-                .font(AppTypography.caption2)
-                .foregroundColor(isReached ? .white : AppColors.textTertiary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.sm)
-        .background(isReached ? AppColors.primary : AppColors.surface)
-    }
-
-    private func phaseOrder(_ phase: FodmapPhase) -> Int {
-        switch phase {
-        case .elimination: return 0
-        case .reintroduction: return 1
-        case .maintenance: return 2
-        }
-    }
-
-    private func phaseIcon(_ phase: FodmapPhase) -> String {
-        switch phase {
-        case .elimination: return "xmark.circle"
-        case .reintroduction: return "arrow.triangle.2.circlepath"
-        case .maintenance: return "checkmark.circle"
-        }
-    }
-
-    private func phaseTitle(_ phase: FodmapPhase) -> String {
-        switch phase {
-        case .elimination: return "Elimination Phase"
-        case .reintroduction: return "Reintroduction Phase"
-        case .maintenance: return "Maintenance Phase"
-        }
-    }
-
-    private func phaseDescription(_ phase: FodmapPhase) -> String {
-        switch phase {
-        case .elimination: return "Avoid high FODMAP foods for 2-6 weeks"
-        case .reintroduction: return "Test one FODMAP group at a time"
-        case .maintenance: return "Personalized diet based on your tolerances"
-        }
-    }
-
-    private func daysSinceStart(_ date: Date) -> String {
-        let days = Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
-        if days == 0 { return "Started today" }
-        if days == 1 { return "Day 1" }
-        return "Day \(days)"
-    }
-
-    private func tipsForPhase(_ phase: FodmapPhase) -> [String] {
-        switch phase {
-        case .elimination:
-            return [
-                "Focus on low FODMAP foods (marked green below)",
-                "Keep a detailed food diary",
-                "Symptoms should improve within 2-6 weeks"
-            ]
-        case .reintroduction:
-            return [
-                "Test one FODMAP group every 3 days",
-                "Keep portions small at first",
-                "Log any symptoms that appear"
-            ]
-        case .maintenance:
-            return [
-                "Eat a varied diet within your tolerances",
-                "You may tolerate some high FODMAP foods in small amounts",
-                "Continue logging to track patterns"
-            ]
-        }
-    }
-
-    private func phaseTips(_ phase: FodmapPhase) -> some View {
-        let tips = tipsForPhase(phase)
-
-        return VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("Tips")
+    private func legendRow(color: Color, label: String, detail: String) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            Circle()
+                .fill(color)
+                .frame(width: 10, height: 10)
+            Text(label)
                 .font(AppTypography.caption1)
-                .fontWeight(.semibold)
-                .foregroundColor(AppColors.primary)
-            ForEach(tips, id: \.self) { tip in
-                HStack(alignment: .top, spacing: AppSpacing.xs) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.caption2)
-                        .foregroundColor(AppColors.primary)
-                        .padding(.top, 2)
-                    Text(tip)
-                        .font(AppTypography.caption1)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-            }
+                .fontWeight(.medium)
+                .foregroundColor(AppColors.text)
+            Text("— \(detail)")
+                .font(AppTypography.caption1)
+                .foregroundColor(AppColors.textSecondary)
         }
-        .padding(AppSpacing.sm)
-        .background(AppColors.primaryContainer)
-        .cornerRadius(AppRadius.sm)
     }
 
     // MARK: - Filter Chips
@@ -280,7 +221,7 @@ public struct FODMAPGuideView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 2) {
-                Text(food.fodmapLevel.rawValue.uppercased())
+                Text(food.fodmapLevel.rawValue.capitalized)
                     .font(AppTypography.caption2)
                     .fontWeight(.semibold)
                     .foregroundColor(colorForLevel(food.fodmapLevel))
@@ -315,20 +256,9 @@ public struct FODMAPGuideView: View {
 
     private func loadData() async {
         isLoading = true
-        async let foodsTask: () = loadFoods()
-        async let profileTask: () = loadProfile()
-        _ = await (foodsTask, profileTask)
-        isLoading = false
-    }
-
-    private func loadFoods() async {
         foods = FodmapRepository.shared.foods
         await FodmapRepository.shared.refreshIfNeeded()
         foods = FodmapRepository.shared.foods
-    }
-
-    private func loadProfile() async {
-        guard let uid = authService.currentUserId else { return }
-        userProfile = try? await FirestoreService.shared.getUserProfile(uid: uid)
+        isLoading = false
     }
 }

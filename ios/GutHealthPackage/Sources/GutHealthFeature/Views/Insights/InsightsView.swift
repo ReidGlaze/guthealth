@@ -1,6 +1,9 @@
 import SwiftUI
+import StoreKit
+import UIKit
 
 public struct InsightsView: View {
+    @Environment(\.requestReview) private var requestReview
     @State private var correlationReports: [CorrelationReport] = []
     @State private var isRunningAnalysis = false
     @State private var analysisError: String? = nil
@@ -33,6 +36,7 @@ public struct InsightsView: View {
             }
             .background(AppColors.background)
             .navigationTitle("Insights")
+            .navigationBarTitleDisplayMode(.inline)
             .task { await loadData() }
             .refreshable { await loadData() }
         }
@@ -323,13 +327,27 @@ public struct InsightsView: View {
             let result = try await FunctionsService.shared.runCorrelationEngine(daysBack: selectedDaysBack)
             if let message = result.message {
                 analysisError = message
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
             } else if let report = result.report {
                 correlationReports.insert(report, at: 0)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                requestInAppReview()
             }
         } catch {
             analysisError = "Analysis failed: \(error.localizedDescription)"
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
         isRunningAnalysis = false
+    }
+
+    private func requestInAppReview() {
+        let key = "correlationReportCount"
+        let count = UserDefaults.standard.integer(forKey: key) + 1
+        UserDefaults.standard.set(count, forKey: key)
+        // Prompt after 1st and every 3rd report thereafter
+        if count == 1 || (count > 1 && count % 3 == 0) {
+            requestReview()
+        }
     }
 }
 

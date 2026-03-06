@@ -8,12 +8,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import android.view.HapticFeedbackConstants
 import com.google.firebase.Timestamp
 import com.twintipsolutions.guthealth.data.FirestoreService
 import com.twintipsolutions.guthealth.data.models.Symptom
@@ -36,6 +39,7 @@ fun SymptomLogSheet(
     onError: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
+    val view = LocalView.current
     val firestoreService = remember { FirestoreService() }
 
     var selectedType by remember { mutableStateOf("bloating") }
@@ -187,9 +191,17 @@ fun SymptomLogSheet(
                     color = severityColor
                 )
             }
+            var lastTickValue by remember { mutableIntStateOf(severity.toInt()) }
             Slider(
                 value = severity,
-                onValueChange = { severity = it },
+                onValueChange = {
+                    severity = it
+                    val newTick = it.toInt()
+                    if (newTick != lastTickValue) {
+                        lastTickValue = newTick
+                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                    }
+                },
                 valueRange = 1f..10f,
                 steps = 8,
                 colors = SliderDefaults.colors(
@@ -208,7 +220,7 @@ fun SymptomLogSheet(
 
         // Location
         Text(
-            text = "Location (Optional)",
+            text = "Location (optional)",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )

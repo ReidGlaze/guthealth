@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.firebase.storage.ktx)
     implementation(libs.firebase.functions.ktx)
     implementation(libs.firebase.messaging.ktx)
+    implementation(libs.firebase.analytics.ktx)
 
     implementation(libs.camerax.core)
     implementation(libs.camerax.camera2)
@@ -63,6 +64,9 @@ dependencies {
     implementation(libs.camerax.view)
 
     implementation(libs.coil.compose)
+
+    implementation(libs.play.review)
+    implementation(libs.play.review.ktx)
 
     implementation("com.google.guava:guava:33.0.0-android")
 

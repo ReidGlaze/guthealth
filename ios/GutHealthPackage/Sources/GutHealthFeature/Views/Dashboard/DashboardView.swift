@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 public struct DashboardView: View {
     @State private var selectedDate: Date = Calendar.current.startOfDay(for: Date())
@@ -43,6 +44,7 @@ public struct DashboardView: View {
             }
             .background(AppColors.background)
             .navigationTitle("Dashboard")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -636,6 +638,7 @@ public struct DashboardView: View {
     private func deleteMealConfirmed() async {
         guard let uid = authService.currentUserId, let meal = mealToDelete, let id = meal.id else { return }
         try? await FirestoreService.shared.deleteMeal(uid: uid, mealId: id)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
         mealToDelete = nil
         await loadEntriesForDate()
     }
@@ -643,6 +646,7 @@ public struct DashboardView: View {
     private func deleteSymptomConfirmed() async {
         guard let uid = authService.currentUserId, let symptom = symptomToDelete, let id = symptom.id else { return }
         try? await FirestoreService.shared.deleteSymptom(uid: uid, symptomId: id)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
         symptomToDelete = nil
         await loadEntriesForDate()
     }
@@ -650,6 +654,7 @@ public struct DashboardView: View {
     private func deletePoopLogConfirmed() async {
         guard let uid = authService.currentUserId, let log = poopLogToDelete, let id = log.id else { return }
         try? await FirestoreService.shared.deletePoopLog(uid: uid, logId: id)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
         poopLogToDelete = nil
         await loadEntriesForDate()
     }

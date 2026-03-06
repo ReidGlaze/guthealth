@@ -31,7 +31,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import android.view.HapticFeedbackConstants
 import coil.compose.AsyncImage
 import com.google.firebase.Timestamp
 import com.twintipsolutions.guthealth.data.FirestoreService
@@ -79,6 +81,7 @@ fun PoopLogSheet(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val view = LocalView.current
     val firestoreService = remember { FirestoreService() }
 
     var selectedBristol by remember { mutableStateOf<Int?>(null) }
@@ -119,8 +122,10 @@ fun PoopLogSheet(
                 val bristolLabel = if (bristolResult != null && bristolResult in 1..7) "Type $bristolResult" else "unknown"
                 val colorLabel = if (colorResult != null && colorResult in validColors) colorResult else "unknown"
                 classificationResult = "AI classified as $bristolLabel, color: $colorLabel"
+                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
             } catch (_: Exception) {
                 classificationResult = "AI classification unavailable. Please select manually."
+                view.performHapticFeedback(HapticFeedbackConstants.REJECT)
             } finally {
                 isClassifying = false
             }

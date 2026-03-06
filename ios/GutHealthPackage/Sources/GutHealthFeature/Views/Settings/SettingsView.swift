@@ -1,12 +1,10 @@
 import SwiftUI
-import FirebaseFirestore
 
 public struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     private let authService = AuthService.shared
 
-    @State private var fodmapPhase: FodmapPhase = .elimination
     @State private var morningReminder = true
     @State private var morningTime = defaultTime(hour: 8, minute: 0)
     @State private var lunchReminder = true
@@ -25,7 +23,6 @@ public struct SettingsView: View {
     public var body: some View {
         NavigationStack {
             List {
-                fodmapPhaseSection
                 reminderTimesSection
                 notificationsSection
                 appInfoSection
@@ -60,36 +57,6 @@ public struct SettingsView: View {
             .sheet(isPresented: $showDisclaimer) {
                 disclaimerSheet
             }
-        }
-    }
-
-    // MARK: - FODMAP Phase
-
-    private var fodmapPhaseSection: some View {
-        Section {
-            Picker("Current Phase", selection: $fodmapPhase) {
-                ForEach(FodmapPhase.allCases, id: \.self) { phase in
-                    Text(phase.rawValue.capitalized).tag(phase)
-                }
-            }
-            .onChange(of: fodmapPhase) { _, newPhase in
-                Task { await saveFodmapPhase(newPhase) }
-            }
-        } header: {
-            Text("FODMAP Phase")
-        } footer: {
-            Text(fodmapPhaseDescription)
-        }
-    }
-
-    private var fodmapPhaseDescription: String {
-        switch fodmapPhase {
-        case .elimination:
-            return "Remove high-FODMAP foods for 2-6 weeks to establish a baseline."
-        case .reintroduction:
-            return "Systematically reintroduce FODMAP groups one at a time."
-        case .maintenance:
-            return "Enjoy a personalized diet based on your identified triggers."
         }
     }
 
@@ -316,7 +283,6 @@ public struct SettingsView: View {
         }
         do {
             if let profile = try await FirestoreService.shared.getUserProfile(uid: uid) {
-                fodmapPhase = profile.fodmapPhase
                 notificationsEnabled = profile.preferences.notificationsEnabled
 
                 let times = profile.preferences.reminderTimes
@@ -342,14 +308,6 @@ public struct SettingsView: View {
 
     // MARK: - Save Actions
 
-    private func saveFodmapPhase(_ phase: FodmapPhase) async {
-        guard let uid = authService.currentUserId else { return }
-        try? await FirestoreService.shared.updateUserProfile(uid: uid, fields: [
-            "fodmapPhase": phase.rawValue,
-            "fodmapPhaseStartDate": Timestamp(date: Date())
-        ])
-    }
-
     private func saveReminderTimes() async {
         guard let uid = authService.currentUserId else { return }
         var times: [String] = []
@@ -371,9 +329,19 @@ public struct SettingsView: View {
             }
         }
         guard let uid = authService.currentUserId else { return }
-        try? await FirestoreService.shared.updateUserProfile(uid: uid, fields: [
-            "preferences.notificationsEnabled": enabled
-        ])
+        var fields: [String: Any] = [
+            "preferences.notificationsEnabled": enabled,
+            "preferences.timezone": TimeZone.current.identifier
+        ]
+        // When enabling, also save current reminder times so they're set
+        if enabled {
+            var times: [String] = []
+            if morningReminder { times.append(formatTime(morningTime)) }
+            if lunchReminder { times.append(formatTime(lunchTime)) }
+            if dinnerReminder { times.append(formatTime(dinnerTime)) }
+            fields["preferences.reminderTimes"] = times
+        }
+        try? await FirestoreService.shared.updateUserProfile(uid: uid, fields: fields)
     }
 
     private func signOut() {

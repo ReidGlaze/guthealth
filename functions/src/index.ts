@@ -690,9 +690,15 @@ export const sendReminders = onSchedule(
         hour: "2-digit",
         hour12: false,
       }).replace(/\s/g, "");
-      const currentHour = userHour.padStart(2, "0") + ":00";
+      const currentHourNum = parseInt(userHour, 10);
 
-      if (!fcmToken || !reminderTimes.includes(currentHour)) continue;
+      // Check if any reminder time falls within the current hour
+      if (!fcmToken) continue;
+      const hasMatchingReminder = reminderTimes.some((t: string) => {
+        const reminderHour = parseInt(t.split(":")[0], 10);
+        return reminderHour === currentHourNum;
+      });
+      if (!hasMatchingReminder) continue;
 
       messages.push({
         token: fcmToken,

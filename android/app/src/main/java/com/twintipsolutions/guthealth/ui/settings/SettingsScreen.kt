@@ -20,9 +20,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.google.firebase.messaging.FirebaseMessaging
 import com.twintipsolutions.guthealth.data.FirestoreService
 import com.twintipsolutions.guthealth.ui.theme.TealPrimary
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,7 +34,6 @@ fun SettingsScreen(onDismiss: () -> Unit) {
     val context = LocalContext.current
     val firestoreService = remember { FirestoreService() }
 
-    var fodmapPhase by remember { mutableStateOf("elimination") }
     var morningEnabled by remember { mutableStateOf(true) }
     var lunchEnabled by remember { mutableStateOf(true) }
     var dinnerEnabled by remember { mutableStateOf(true) }
@@ -50,9 +52,24 @@ fun SettingsScreen(onDismiss: () -> Unit) {
         notificationsEnabled = granted
         scope.launch {
             try {
-                firestoreService.updateUserProfile(
-                    mapOf("preferences.notificationsEnabled" to granted)
+                val fields = mutableMapOf<String, Any>(
+                    "preferences.notificationsEnabled" to granted,
+                    "preferences.timezone" to TimeZone.getDefault().id
                 )
+                if (granted) {
+                    // Save FCM token when notifications are granted
+                    try {
+                        val token = FirebaseMessaging.getInstance().token.await()
+                        fields["fcmToken"] = token
+                    } catch (_: Exception) {}
+                    // Also save current reminder times
+                    val times = mutableListOf<String>()
+                    if (morningEnabled) times.add(morningTime)
+                    if (lunchEnabled) times.add(lunchTime)
+                    if (dinnerEnabled) times.add(dinnerTime)
+                    fields["preferences.reminderTimes"] = times
+                }
+                firestoreService.updateUserProfile(fields)
             } catch (_: Exception) {}
         }
     }
@@ -63,7 +80,6 @@ fun SettingsScreen(onDismiss: () -> Unit) {
             firestoreService.signInAnonymously()
             val profile = firestoreService.getUserProfile()
             if (profile != null) {
-                fodmapPhase = profile.fodmapPhase
                 notificationsEnabled = profile.preferences.notificationsEnabled
                 val times = profile.preferences.reminderTimes
                 morningEnabled = times.any { it.startsWith("0") || it.startsWith("10") }
@@ -104,53 +120,6 @@ fun SettingsScreen(onDismiss: () -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // FODMAP Phase Section
-            SettingsSectionHeader("FODMAP Phase")
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    val phases = listOf("elimination", "reintroduction", "maintenance")
-                    phases.forEach { phase ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = fodmapPhase == phase,
-                                onClick = {
-                                    fodmapPhase = phase
-                                    scope.launch {
-                                        try {
-                                            firestoreService.updateFodmapPhase(phase)
-                                        } catch (_: Exception) {}
-                                    }
-                                },
-                                colors = RadioButtonDefaults.colors(selectedColor = TealPrimary)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(
-                                    text = phase.replaceFirstChar { it.uppercase() },
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = phaseDescription(phase),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
             // Reminder Times Section
             SettingsSectionHeader("Reminder Times")
             Card(
@@ -250,9 +219,22 @@ fun SettingsScreen(onDismiss: () -> Unit) {
                             notificationsEnabled = enabled
                             scope.launch {
                                 try {
-                                    firestoreService.updateUserProfile(
-                                        mapOf("preferences.notificationsEnabled" to enabled)
+                                    val fields = mutableMapOf<String, Any>(
+                                        "preferences.notificationsEnabled" to enabled,
+                                        "preferences.timezone" to TimeZone.getDefault().id
                                     )
+                                    if (enabled) {
+                                        try {
+                                            val token = FirebaseMessaging.getInstance().token.await()
+                                            fields["fcmToken"] = token
+                                        } catch (_: Exception) {}
+                                        val times = mutableListOf<String>()
+                                        if (morningEnabled) times.add(morningTime)
+                                        if (lunchEnabled) times.add(lunchTime)
+                                        if (dinnerEnabled) times.add(dinnerTime)
+                                        fields["preferences.reminderTimes"] = times
+                                    }
+                                    firestoreService.updateUserProfile(fields)
                                 } catch (_: Exception) {}
                             }
                         },
@@ -575,13 +557,6 @@ private fun ReminderRow(
             colors = SwitchDefaults.colors(checkedTrackColor = TealPrimary)
         )
     }
-}
-
-private fun phaseDescription(phase: String): String = when (phase) {
-    "elimination" -> "Remove high-FODMAP foods for 2-6 weeks"
-    "reintroduction" -> "Reintroduce FODMAP groups one at a time"
-    "maintenance" -> "Personalized diet based on your triggers"
-    else -> ""
 }
 
 private fun formatDisplayTime(time: String): String {

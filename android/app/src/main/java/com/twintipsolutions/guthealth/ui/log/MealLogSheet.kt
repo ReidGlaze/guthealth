@@ -1,5 +1,7 @@
 package com.twintipsolutions.guthealth.ui.log
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
@@ -37,8 +39,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import android.view.HapticFeedbackConstants
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
@@ -77,6 +81,7 @@ fun MealLogSheet(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val view = LocalView.current
     val firestoreService = remember { FirestoreService() }
     val fodmapRepository = remember { FodmapRepository.getInstance(context) }
 
@@ -343,9 +348,11 @@ fun MealLogSheet(
                                             ?.filterIsInstance<String>() ?: emptyList()
                                     )
                                 }
+                                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                             } catch (e: Exception) {
                                 android.util.Log.e("MealLogSheet", "AI analysis failed", e)
                                 analysisError = "AI analysis unavailable. You can still add foods manually."
+                                view.performHapticFeedback(HapticFeedbackConstants.REJECT)
                             } finally {
                                 isAnalyzing = false
                             }
@@ -715,6 +722,30 @@ fun CameraScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val imageCapture = remember { ImageCapture.Builder().build() }
 
+    var hasPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasPermission = granted
+        if (!granted) onClose()
+    }
+
+    LaunchedEffect(Unit) {
+        if (!hasPermission) {
+            permissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    if (!hasPermission) {
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black))
+        return
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             factory = { ctx ->
@@ -734,7 +765,9 @@ fun CameraScreen(
                                 preview,
                                 imageCapture
                             )
-                        } catch (_: Exception) {}
+                        } catch (e: Exception) {
+                            Log.e("CameraScreen", "Failed to bind camera", e)
+                        }
                     },
                     ContextCompat.getMainExecutor(ctx)
                 )
@@ -779,7 +812,6 @@ fun CameraScreen(
                                 val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
                                 val fileUri = Uri.fromFile(outputFile)
                                 onImageCaptured(base64, fileUri)
-                                // Don't delete yet — URI is still needed for preview
                             }
 
                             override fun onError(exception: ImageCaptureException) {

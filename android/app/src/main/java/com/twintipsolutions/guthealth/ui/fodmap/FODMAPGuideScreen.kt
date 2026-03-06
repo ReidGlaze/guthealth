@@ -1,7 +1,7 @@
 package com.twintipsolutions.guthealth.ui.fodmap
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,9 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,23 +31,18 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FODMAPGuideScreen() {
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val firestoreService = remember { FirestoreService() }
     val fodmapRepository = remember { FodmapRepository.getInstance(context) }
 
     var searchQuery by remember { mutableStateOf("") }
-    var currentPhase by remember { mutableStateOf("elimination") }
     var selectedFilter by remember { mutableStateOf<String?>(null) }
+    var isInfoExpanded by remember { mutableStateOf(false) }
     val allFoods by fodmapRepository.foods.collectAsState()
 
     LaunchedEffect(Unit) {
         try {
             firestoreService.signInAnonymously()
-            val profile = firestoreService.getUserProfile()
-            if (profile != null) {
-                currentPhase = profile.fodmapPhase
-            }
         } catch (_: Exception) {}
         fodmapRepository.refreshIfNeeded()
     }
@@ -92,17 +85,10 @@ fun FODMAPGuideScreen() {
                 singleLine = true
             )
 
-            // Phase card — white card with segmented pills
-            PhaseCard(
-                currentPhase = currentPhase,
-                onPhaseChange = { newPhase ->
-                    scope.launch {
-                        try {
-                            firestoreService.updateFodmapPhase(newPhase)
-                            currentPhase = newPhase
-                        } catch (_: Exception) {}
-                    }
-                }
+            // What is FODMAP? expandable info card
+            WhatIsFodmapCard(
+                isExpanded = isInfoExpanded,
+                onToggle = { isInfoExpanded = !isInfoExpanded }
             )
 
             // Filter chips
@@ -130,9 +116,6 @@ fun FODMAPGuideScreen() {
                     )
                 }
             }
-
-            // Phase guidance tips — teal-tinted box matching iOS
-            PhaseGuidanceCard(phase = currentPhase)
 
             // Filtered food list
             val displayedFoods = allFoods.filter { food ->
@@ -176,9 +159,7 @@ fun FODMAPGuideScreen() {
 }
 
 @Composable
-private fun PhaseCard(currentPhase: String, onPhaseChange: (String) -> Unit) {
-    val phases = listOf("elimination", "reintroduction", "maintenance")
-
+private fun WhatIsFodmapCard(isExpanded: Boolean, onToggle: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -190,170 +171,94 @@ private fun PhaseCard(currentPhase: String, onPhaseChange: (String) -> Unit) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(
-                text = "Your FODMAP Phase",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Segmented pill selector
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    .padding(3.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                phases.forEach { phase ->
-                    val isSelected = phase == currentPhase
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (isSelected) TealPrimary else Color.Transparent)
-                            .clickable { onPhaseChange(phase) }
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = phase.replaceFirstChar { it.uppercase() },
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Phase name + "Started today" badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
+                    .clickable { onToggle() },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = phaseTitle(currentPhase),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = phaseDescription(currentPhase),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    tint = TealPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
-                // "Started today" badge
+                Text(
+                    text = "What is FODMAP?",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "FODMAPs (Fermentable Oligosaccharides, Disaccharides, Monosaccharides, and Polyols) are short-chain carbohydrates that can cause bloating, gas, and digestive discomfort, especially for those with IBS.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "This guide helps you identify high and low FODMAP foods. Use it with the app's meal logging and correlation analysis to discover your personal triggers.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Color legend
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(GreenSecondary.copy(alpha = 0.12f))
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(TealPrimary.copy(alpha = 0.08f))
+                        .padding(12.dp)
                 ) {
-                    Text(
-                        text = "Started today",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = GreenSecondary,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = "Color Legend",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        LegendRow(color = GreenSecondary, label = "Low", detail = "Generally well-tolerated")
+                        LegendRow(color = Color(0xFFFFB74D), label = "Moderate", detail = "May trigger in larger portions")
+                        LegendRow(color = Color(0xFFE57373), label = "High", detail = "Common trigger for sensitive individuals")
+                    }
                 }
             }
         }
     }
-}
-
-private fun phaseTitle(phase: String): String = when (phase) {
-    "elimination" -> "Elimination Phase"
-    "reintroduction" -> "Reintroduction Phase"
-    "maintenance" -> "Maintenance Phase"
-    else -> ""
-}
-
-private fun phaseDescription(phase: String): String = when (phase) {
-    "elimination" -> "Avoid high FODMAP foods for 2-6 weeks"
-    "reintroduction" -> "Slowly reintroduce one FODMAP group at a time"
-    "maintenance" -> "Enjoy a varied diet while avoiding personal triggers"
-    else -> ""
 }
 
 @Composable
-private fun PhaseGuidanceCard(phase: String) {
-    val tips = when (phase) {
-        "elimination" -> listOf(
-            "Focus on low FODMAP foods (marked green below)",
-            "Keep a detailed food diary",
-            "Symptoms should improve within 2-6 weeks"
+private fun LegendRow(color: Color, label: String, detail: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(color)
         )
-        "reintroduction" -> listOf(
-            "Test one FODMAP group at a time",
-            "Wait 3 days between testing new groups",
-            "Return to elimination diet between tests"
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium
         )
-        "maintenance" -> listOf(
-            "Avoid your identified trigger foods",
-            "You may tolerate some FODMAPs in small amounts",
-            "Enjoy a varied, balanced diet"
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = "— $detail",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        else -> emptyList()
-    }
-
-    if (tips.isEmpty()) return
-
-    // Teal-tinted tips box matching iOS style
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(TealPrimary.copy(alpha = 0.08f))
-            .border(1.dp, TealPrimary.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-            .padding(16.dp)
-    ) {
-        Column {
-            Text(
-                text = "Tips",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = TealPrimary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            tips.forEach { tip ->
-                Row(
-                    modifier = Modifier.padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        tint = GreenSecondary,
-                        modifier = Modifier
-                            .size(16.dp)
-                            .padding(top = 2.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = tip,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-        }
     }
 }
 

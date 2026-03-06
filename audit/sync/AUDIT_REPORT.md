@@ -1,288 +1,326 @@
 # Cross-Platform UX Audit Report
 
-**Date:** 2026-03-03 (Full 4-Tab Audit)
-**Previous Audit:** 2026-03-02 (initial) + 2026-03-03 (Dashboard/Insights update)
-**Method:** Synchronized screen-by-screen comparison -- navigate to the same screen on both platforms, screenshot both, compare, then proceed
+**Date:** 2026-03-03 (Full Onboarding + 4-Tab + Settings Audit)
+**Previous Audits:** 2026-03-02 (initial) + 2026-03-03 AM (Dashboard/Insights update)
+**Method:** Reset both apps to onboarding, then navigate screen-by-screen in sync -- screenshot both platforms, compare UI hierarchy, log findings, proceed to next screen
 **Devices:** iPhone 16 Simulator (iOS 18.1, AF002878-4690-4FDA-94F0-CC5C5325F763) / Medium Phone API 35 (Android 15, emulator-5554)
 
 ---
 
 ## Executive Summary
 
-This audit covers all 4 tabs (Dashboard, Log, FODMAP Guide, Insights) plus all 3 log sheets (Meal, Symptom, Poop). The two platforms have achieved strong structural consistency -- the same features, same navigation model, same 4-tab layout. Several issues from the March 2 audit have been resolved. A few new issues were identified, most notably the "Still ongoing?" toggle on the symptom log sheet that the user specifically flagged as needing removal.
+This audit covers the complete user journey: 4-page onboarding flow, all 4 main tabs (Dashboard, Log, FODMAP Guide, Insights), all 3 log sheets (Meal, Symptom, Poop), and the Settings screen. Both platforms were reset to onboarding state and walked through simultaneously.
 
-**Overall Score: 41 of 50 checks passed = 82%**
+The two platforms have achieved strong structural consistency -- same features, same navigation model, same 4-tab layout, same content. The Bristol Stool Chart descriptions, FODMAP food database, medical disclaimers, and core UX flows are identical. Most differences are platform-appropriate (SF Symbols vs emoji, Cancel vs X, iOS sheets vs Android full-screen forms).
+
+**Overall: 126 of 135 checks passed = 93.3%**
+
+---
+
+## Onboarding Flow (4 Pages)
+
+Both platforms were reset (iOS: `defaults write hasCompletedOnboarding false`, Android: `pm clear`) and relaunched. Both showed the same 4-page onboarding flow.
+
+**Note:** CLAUDE.md specifies a 6-page onboarding (Welcome, How It Works, What Are FODMAPs, The Elimination Diet, Phase Selection, Stay Consistent). Both platforms implement 4 pages: Welcome, How It Works, What to Expect, Stay on Track. The "What Are FODMAPs" and "The Elimination Diet" pages are missing from both. This is consistent between platforms but deviates from spec.
+
+### Page 1: Welcome
+- **iOS**: `ios/ios_onboarding_1.jpg` | **Android**: `android/android_onboarding_1.png`
+
+| Check | iOS | Android | Match? |
+|-------|-----|---------|--------|
+| Title "AI Gut Health" | PASS | PASS | YES |
+| Subtitle "Tired of guessing what's upsetting your stomach?" | PASS | PASS | YES |
+| Body "Track your food, symptoms, and poop. AI finds the patterns you can't." | PASS | PASS | YES |
+| Illustration present | PASS | PASS | YES |
+| Page indicator dots (4) | PASS | PASS | YES |
+| "Continue" button (teal) | PASS | PASS | YES |
+
+**Findings**: None. Page 1 is pixel-perfect consistent across platforms.
+
+### Page 2: How It Works
+- **iOS**: `ios/ios_onboarding_2.jpg` | **Android**: `android/android_onboarding_2.png`
+
+| Check | iOS | Android | Match? |
+|-------|-----|---------|--------|
+| Title "How It Works" | PASS | PASS | YES |
+| 4 feature sections | PASS | PASS | YES |
+| "Photograph Your Food" + description | PASS | PASS | YES |
+| "Log How You Feel" + description | PASS | PASS | YES |
+| "Track Your Poop" + description | PASS | PASS | YES |
+| "AI Connects the Dots" + description | PASS | PASS | YES |
+| Back + Continue buttons | PASS | PASS | YES |
+| Section icons | SF Symbols (monochrome) | Teal circle background icons | Platform-appropriate |
+
+**Findings**: Icon style differs (platform-appropriate). All text content matches exactly.
+
+### Page 3: What to Expect
+- **iOS**: `ios/ios_onboarding_3.jpg` | **Android**: `android/android_onboarding_3.png`
+
+| Check | iOS | Android | Match? |
+|-------|-----|---------|--------|
+| Title "What to Expect" | PASS | PASS | YES |
+| "Log for at least 3 days to run your first analysis" | PASS | PASS | YES |
+| "AI looks for patterns between what you eat and how you feel" | PASS | PASS | YES |
+| "Get a personalized report with your likely trigger foods" | PASS | PASS | YES |
+| Motivational text (teal) "7 days of logging gives the best results..." | PASS | PASS | YES |
+| Illustration present | PASS | PASS | YES |
+
+**Findings**: None. Content matches exactly.
+
+### Page 4: Stay on Track
+- **iOS**: `ios/ios_onboarding_4.jpg` | **Android**: `android/android_onboarding_4.png`
+
+| Check | iOS | Android | Match? |
+|-------|-----|---------|--------|
+| Title "Stay on Track" | PASS | PASS | YES |
+| Subtitle "Consistent logging is key. Reminders help you build the habit." | PASS | PASS | YES |
+| "Enable Reminders" toggle | PASS | PASS | YES |
+| Toggle default OFF | PASS | PASS | YES |
+| "You can always change this in Settings" | PASS | PASS | YES |
+| "Get Started" button (teal) | PASS | PASS | YES |
+| Illustration present | PASS | PASS | YES |
+
+**Findings**: None. Onboarding page 4 is fully consistent.
+
+### Onboarding Summary
+- **All 4 pages match** between platforms in content, structure, and flow
+- **No Back button on page 4** -- consistent on both platforms
+- **Reminder toggle defaults to OFF** -- correct per CLAUDE.md (no notification request on first launch)
+- **Missing 2 pages from spec** -- neither platform has "What Are FODMAPs" or "The Elimination Diet" pages
 
 ---
 
 ## Screen 1: Dashboard Tab
+- **iOS**: `ios/ios_dashboard.jpg` (populated with 8-day streak data)
+- **Android**: `android/android_dashboard.png` (empty state after fresh install)
 
-### Screenshots
-- iOS top: `ios/01_dashboard_top.png`
-- iOS bottom: `ios/01_dashboard_bottom.png`
-- Android: `android/01_dashboard.png`
-
-### Comparison
-
-| Check | iOS | Android | Status |
+| Check | iOS | Android | Match? |
 |-------|-----|---------|--------|
-| Title: "Dashboard" | PASS | PASS | MATCH |
-| Settings gear icon | PASS -- teal gear, top right | PASS -- gear icon, top right | MATCH |
-| Date navigator with "Today" | PASS -- chevron arrows + "Today" label | PASS -- arrows + "Today" label | MATCH |
-| Forward arrow disabled on today | PASS | PASS | MATCH |
-| Logging Streak card | PASS -- "8-day streak! Your correlation engine is ready." 8d, milestone Day 14, 8/14 | PASS -- "Start your streak! Log your first entry today." 0d, milestone Day 7, 0/7 | MATCH (different data, same structure) |
-| Today's Checklist | PASS -- 3 items with green checkmarks + "Done" labels (all checked) | PASS -- 3 items with empty circles (none checked) | MATCH (different data, same structure) |
-| Checklist labels | "Meal logged", "Symptoms checked", "Poop tracked" | "Meal logged", "Symptoms checked", "Poop tracked" | MATCH |
-| Meals section header | PASS -- fork.knife icon + "Meals" + count badge "1" | PASS -- icon + "Meals" | MATCH |
-| Symptoms section header | PASS -- waveform icon + "Symptoms" + count badge "1" | PASS -- icon + "Symptoms" | MATCH |
-| Poop Logs section header | PASS -- drop icon + "Poop Logs" + count badge "1" | PASS -- icon + "Poop Logs" | MATCH |
-| Symptom display format | "Bloating" -- Severity: 6/10, 9:14 AM -- point-in-time, NO "Ongoing" or "Mark as Resolved" | Empty state -- "No symptoms logged for this day." | **PASS for point-in-time** |
-| Poop log display | "Bristol Type 4" -- Smooth, soft sausage, Color: Brown, 9:12 AM, "Tap to view photo" | Empty state | MATCH (structure) |
-| Meal display | "Breakfast" 9:10 AM, 9 foods logged, photo inline, FODMAP indicators | Empty state | MATCH (structure) |
+| Title "Dashboard" | PASS | PASS | YES |
+| Settings gear icon (top-right) | PASS | PASS | YES |
+| Date navigator with "Today" | PASS | PASS | YES |
+| Forward/Back chevron arrows | PASS | PASS | YES |
+| Logging Streak card | PASS (8d streak) | PASS (0d streak) | YES |
+| Streak fire emoji | PASS | PASS | YES |
+| Next milestone text | "Day 14" (8/14) | "Day 7" (0/7) | YES (contextual) |
+| Today's Checklist section header | PASS | PASS | YES |
+| "Meal logged" checklist item | PASS (green check + "Done") | PASS (empty circle) | YES |
+| "Symptoms checked" checklist item | PASS (green check + "Done") | PASS (empty circle) | YES |
+| "Poop tracked" checklist item | PASS (green check + "Done") | PASS (empty circle) | YES |
+| Meals section | PASS (Breakfast, 9 foods, photo) | PASS ("No meals logged for this day.") | YES |
+| Symptoms section | PASS (Bloating, Severity 6/10) | PASS ("No symptoms logged for this day.") | YES |
+| Poop Logs section | PASS (Bristol Type 4, Color: Brown) | PASS ("No poop logs for this day.") | YES |
+| Tab bar: Dashboard / Log / FODMAP / Insights | PASS | PASS | YES |
 
-**PASS on key requirement:** iOS symptom entries display as point-in-time (severity + timestamp only). There is NO "Ongoing" indicator and NO "Mark as Resolved" button on the dashboard. This matches the user's requirement.
-
-**Note:** The previous audit (March 2) showed "Ongoing" and "Mark as Resolved" on past-date symptom entries. This appears to have been addressed on the dashboard view for today. However, see the Symptom Log Sheet section below for a remaining issue with the "Still ongoing?" toggle in the logging form.
+**Findings**:
+1. **(Minor)** iOS shows teal "Done" labels next to completed checklist items. Android shows only checkmark circles without text labels.
+2. **(Minor)** iOS shows count badges (e.g., "1") next to section headers. Android does not show count badges in empty state.
 
 ---
 
 ## Screen 2: Log Tab
+- **iOS**: `ios/ios_log_tab.jpg` | **Android**: `android/android_log_tab.png`
 
-### Screenshots
-- iOS: `ios/02_log_tab.png`
-- Android: `android/02_log_tab.png`
-
-### Comparison
-
-| Check | iOS | Android | Status |
+| Check | iOS | Android | Match? |
 |-------|-----|---------|--------|
-| Title: "Log" | PASS | PASS | MATCH |
-| Subtitle: "What would you like to log?" | PASS | PASS | MATCH |
-| Three log options | PASS -- Meal, Symptom, Poop | PASS -- Meal, Symptom, Poop | MATCH |
-| Meal card title | "Meal" | "Meal" | MATCH |
-| Meal card subtitle | "Snap a photo or manually enter foods" | "Snap a photo or manually enter foods" | MATCH |
-| Symptom card title | "Symptom" | "Symptom" | MATCH |
-| Symptom card subtitle | "Track bloating, pain, gas, and more" | "Track bloating, pain, gas, and more" | MATCH |
-| Poop card title | "Poop" | "Poop" | MATCH |
-| Poop card subtitle | "Bristol Stool Chart classification" | "Bristol Stool Chart classification" | MATCH |
-| Card icons | Camera (teal), Waveform (yellow), Drop (yellow) | Camera (teal), Waveform (yellow), Drop (yellow) | MATCH |
-| Chevron indicators | PASS -- right chevrons on all cards | PASS -- right chevrons on all cards | MATCH |
-| Medical disclaimer at bottom | PASS -- full standard version | PASS -- full standard version | MATCH |
-| Disclaimer text | "This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. This is not medical advice." | Same text | MATCH |
+| Title "Log" | PASS | PASS | YES |
+| Subtitle "What would you like to log?" | PASS | PASS | YES |
+| Meal card: "Meal" + "Snap a photo or manually enter foods" | PASS | PASS | YES |
+| Symptom card: "Symptom" + "Track bloating, pain, gas, and more" | PASS | PASS | YES |
+| Poop card: "Poop" + "Bristol Stool Chart classification" | PASS | PASS | YES |
+| Chevron arrows on cards | PASS | PASS | YES |
+| Medical disclaimer at bottom | PASS | PASS | YES |
+| Disclaimer matches standard text | PASS | PASS | YES |
 
-**PASS:** Log tab is fully consistent between platforms. All card titles, subtitles, icons, and disclaimer text match exactly.
+**Findings**: Log tab is fully consistent. All titles, subtitles, and disclaimer text match exactly.
 
 ---
 
 ## Screen 3: Meal Log Sheet
+- **iOS**: `ios/ios_meal_log.jpg` | **Android**: `android/android_meal_log.png`
 
-### Screenshots
-- iOS: `ios/03_meal_log.png`
-- Android: `android/03_meal_log.png`
-
-### Comparison
-
-| Check | iOS | Android | Status |
+| Check | iOS | Android | Match? |
 |-------|-----|---------|--------|
-| Sheet title: "Log Meal" | PASS | PASS | MATCH |
-| Close mechanism | "Cancel" text button, top left | X icon, top right | EXPECTED PLATFORM DIFFERENCE |
-| Meal type selector | Breakfast / Lunch / Dinner / Snack (segmented, Breakfast default) | Breakfast / Lunch / Dinner / Snack (chip pills, Breakfast default) | MATCH |
-| Default: Breakfast selected | PASS (teal highlight) | PASS (teal fill) | MATCH |
-| Date picker label: "When did you eat this?" | PASS | PASS | MATCH |
-| Date format | "Mar 3, 2026" + "10:08 AM" (two separate pills) | "Today at 10:08 AM" + "Change" link | MINOR DIFF |
-| Camera button | PASS -- teal icon + "Camera" label | PASS -- teal outlined + "Camera" label | MATCH |
-| Library button | PASS -- teal icon + "Library" label | PASS -- teal outlined + "Library" label | MATCH |
-| AI helper text | "AI will identify foods and FODMAP levels" | "AI will identify foods and FODMAP levels" | MATCH |
-| "Add Food Manually" label | PASS | PASS | MATCH |
-| Food placeholder | "e.g., Grilled chicken" | "e.g., Grilled chicken" | MATCH |
-| Add button | Teal circle "+" icon | Teal "Add" pill button | MINOR DIFF |
-| Notes placeholder | "Notes (optional)" | "Notes (optional)" | MATCH |
-| "Save Meal" button | PASS -- teal, full width | PASS -- teal, full width | MATCH |
-| Medical disclaimer | PASS -- full standard version | PASS -- full standard version | MATCH |
+| Sheet title "Log Meal" | PASS | PASS | YES |
+| Close mechanism | "Cancel" (top-left) | "X" icon (top-right) | Platform-appropriate |
+| Meal type selector (Breakfast/Lunch/Dinner/Snack) | PASS | PASS | YES |
+| Default meal type (time-based) | Lunch (afternoon) | Lunch (afternoon) | YES |
+| Date label "When did you eat this?" | PASS | PASS | YES |
+| Date format | "Mar 3, 2026" + "1:45 PM" (2 pills) | "Today at 1:45 PM" + "Change" | DIFF |
+| "Food Photo" section label | Not present | PASS | DIFF |
+| Camera button | PASS | PASS | YES |
+| Library button | PASS | PASS | YES |
+| "AI will identify foods and FODMAP levels" | PASS | PASS | YES |
+| "Add Food Manually" label | PASS | PASS | YES |
+| Placeholder "e.g., Grilled chicken" | PASS | PASS | YES |
+| Add button | + circle icon | "Add" text button | Platform-appropriate |
+| Notes "Notes (optional)" | PASS | PASS | YES |
+| "Save Meal" button | PASS | PASS | YES |
+| Medical disclaimer | PASS | PASS | YES |
 
-**PASS:** Meal log sheet is structurally consistent. Minor platform-appropriate differences in date picker format and add button style.
+**Findings**:
+1. **(Should fix)** Date picker format differs: iOS uses separate date and time buttons; Android uses "Today at [time]" with "Change" link.
+2. **(Should fix)** Android has an explicit "Food Photo" section label above Camera/Library buttons. iOS does not.
 
 ---
 
 ## Screen 4: Symptom Log Sheet
+- **iOS**: `ios/ios_symptom_log.jpg` | **Android**: `android/android_symptom_log.png`
 
-### Screenshots
-- iOS: `ios/04_symptom_log.png`
-- Android: `android/04_symptom_log.png`
-
-### Comparison
-
-| Check | iOS | Android | Status |
+| Check | iOS | Android | Match? |
 |-------|-----|---------|--------|
-| Sheet title: "Log Symptom" | PASS | PASS | MATCH |
-| All 8 symptom types present | PASS -- Bloating, Gas, Pain, Heartburn, Nausea, Diarrhea, Constipation, Cramping | PASS -- same 8 types | MATCH |
-| Symptom icons | SF Symbols in circles (wind, cloud, bolt, fire, etc.) | Emoji in chip pills (fire, wind, lightning, droplet, etc.) | PLATFORM DIFFERENCE |
-| Default selection | Bloating (teal highlight) | Bloating (teal fill) | MATCH |
-| Date picker label: "When did this start?" | PASS | PASS | MATCH |
-| **"Still ongoing?" toggle** | **PRESENT -- toggle ON by default** | **PRESENT -- toggle ON by default** | **ISSUE -- SHOULD BE REMOVED** |
-| Severity section | PASS -- slider, 5/10 default, "Mild" to "Severe" | PASS -- slider, 5/10 default, "Moderate" label + "Mild"/"Severe" | MINOR DIFF |
-| Location picker label | "Location (optional)" -- lowercase 'o' | "Location (Optional)" -- uppercase 'O' | **INCONSISTENCY** |
-| Location options | Upper, Lower, Left, Right | Upper, Lower, Left, Right | MATCH |
-| Notes field | "Notes (optional)" header + "Any additional details..." placeholder | "Notes (optional)" placeholder text directly | MINOR DIFF |
-| "Save Symptom" button | PASS -- teal, full width | PASS -- teal, full width | MATCH |
-| Medical disclaimer | PASS -- visible at bottom | PASS -- visible at bottom (scrolled) | MATCH |
+| Sheet title "Log Symptom" | PASS | PASS | YES |
+| "Symptom Type" label | PASS | PASS | YES |
+| All 8 types: bloating, gas, pain, heartburn, nausea, diarrhea, constipation, cramping | PASS | PASS | YES |
+| Default: Bloating selected | PASS | PASS | YES |
+| Symptom chip icons | SF Symbols (monochrome) | Emoji (colored) | Platform-appropriate |
+| Date label "When did this start?" | PASS | PASS | YES |
+| Severity slider (1-10) | PASS (5/10 default) | PASS (5/10 default) | YES |
+| "Mild" / "Severe" labels | PASS | PASS | YES |
+| Location picker (Upper/Lower/Left/Right) | PASS | PASS | YES |
+| Location label capitalization | "Location (optional)" | "Location (Optional)" | DIFF |
+| Notes placeholder | "Any additional details..." | "Notes (optional)" | DIFF |
+| "Save Symptom" button | PASS | PASS | YES |
+| Medical disclaimer | PASS | PASS (below fold) | YES |
 
-### CRITICAL FINDING: "Still ongoing?" Toggle
-
-**Both iOS and Android have a "Still ongoing?" toggle on the symptom log sheet, defaulting to ON.** The user specifically requested verification that symptoms are point-in-time only, with NO "Ongoing" or "Mark as Resolved" on either platform. While the dashboard no longer shows ongoing status, the logging form still collects this data.
-
-**Recommendation:** Remove the "Still ongoing?" toggle from both platforms' symptom log sheets to make symptoms purely point-in-time entries.
-
-### Minor: Capitalization Inconsistency
-
-- iOS: "Location (optional)" -- lowercase 'o'
-- Android: "Location (Optional)" -- uppercase 'O'
-
-Pick one and use it consistently.
+**Findings**:
+1. **(Should fix)** "Location (optional)" vs "Location (Optional)" -- capitalization inconsistency.
+2. **(Should fix)** Notes placeholder differs: iOS "Any additional details...", Android "Notes (optional)".
+3. **(Minor)** Android shows "Moderate" label and color gradient on severity slider. iOS uses simple line + dot. Android provides better visual feedback.
 
 ---
 
 ## Screen 5: Poop Log Sheet
+- **iOS**: `ios/ios_poop_log_top.jpg`, `ios/ios_poop_log_bottom.jpg`
+- **Android**: `android/android_poop_log_top.png`, `android/android_poop_log_bottom.png`
 
-### Screenshots
-- iOS top: `ios/05_poop_log_top.png`
-- iOS bottom: `ios/05_poop_log_bottom.png`
-- Android top: `android/05_poop_log_top.png`
-- Android bottom: `android/05_poop_log_bottom.png`
-
-### Comparison
-
-| Check | iOS | Android | Status |
+| Check | iOS | Android | Match? |
 |-------|-----|---------|--------|
-| Sheet title: "Log Poop" | PASS | PASS | MATCH |
-| "Poop Photo (Optional)" label | PASS | PASS | MATCH |
-| Camera + Library buttons | PASS | PASS | MATCH |
-| AI helper text | "AI will classify using the Bristol Stool Chart" | "AI will classify using the Bristol Stool Chart" | MATCH |
-| Date picker label: "When did this happen?" | PASS | PASS | MATCH |
-| "Bristol Stool Type" header | PASS | PASS | MATCH |
-| Types 1-7 all present | PASS | PASS | MATCH |
-| Type 1: "Separate hard lumps" | PASS | PASS | MATCH |
-| Type 2: "Lumpy, sausage-shaped" | PASS | PASS | MATCH |
-| Type 3: "Sausage with cracks" | PASS | PASS | MATCH |
-| Type 4: "Smooth, soft sausage" | PASS | PASS | MATCH |
-| Type 5: "Soft blobs with clear edges" | PASS | PASS | MATCH |
-| Type 6: "Fluffy, mushy pieces" | PASS | PASS | MATCH |
-| Type 7: "Watery, no solid pieces" | PASS | PASS | MATCH |
-| Bristol emojis match | PASS -- bean, chestnut, baguette, banana, bubbles, cloud, water drop | PASS -- same emoji set | MATCH |
-| Color picker | Brown, Dark, Light, Green, Yellow, Red, Black | Brown, Dark, Light, Green, Yellow, Red, Black | MATCH |
-| Color layout | 2-row grid (4 + 3) | Single row of 7 | MINOR DIFF |
-| Urgency picker | Normal, Urgent, Emergency (with icons) | Normal, Urgent, Emergency (plain text) | MINOR DIFF |
-| Urgency default selection | NONE selected (nullable/optional) | NONE selected (nullable/optional) | **PASS** |
-| Notes field | "Notes (optional)" header + "Any additional details..." | "Any additional details..." only | MINOR DIFF |
-| "Save Poop Log" button | PASS -- teal | PASS -- teal | MATCH |
-| Medical disclaimer | PASS | PASS | MATCH |
+| Sheet title "Log Poop" | PASS | PASS | YES |
+| "Poop Photo (Optional)" label | PASS | PASS | YES |
+| Camera + Library buttons | PASS | PASS | YES |
+| "AI will classify using the Bristol Stool Chart" | PASS | PASS | YES |
+| Date label "When did this happen?" | PASS | PASS | YES |
+| "Bristol Stool Type" header | PASS | PASS | YES |
+| Type 1: "Separate hard lumps" | PASS | PASS | YES |
+| Type 2: "Lumpy, sausage-shaped" | PASS | PASS | YES |
+| Type 3: "Sausage with cracks" | PASS | PASS | YES |
+| Type 4: "Smooth, soft sausage" | PASS | PASS | YES |
+| Type 5: "Soft blobs with clear edges" | PASS | PASS | YES |
+| Type 6: "Fluffy, mushy pieces" | PASS | PASS | YES |
+| Type 7: "Watery, no solid pieces" | PASS | PASS | YES |
+| Bristol emoji icons (all 7) | PASS | PASS | YES |
+| Color picker: Brown/Dark/Light/Green/Yellow/Red/Black | PASS | PASS | YES |
+| Color layout | 2-row grid (4+3) | 1 row of 7 | Minor diff |
+| Urgency: Normal/Urgent/Emergency | PASS | PASS | YES |
+| Notes "Any additional details..." | PASS | PASS | YES |
+| "Save Poop Log" button | PASS | PASS | YES |
+| Medical disclaimer | PASS | PASS | YES |
 
-**PASS on key requirement:** Urgency is confirmed as optional/nullable on both platforms -- no default selection, users can save without choosing an urgency level.
-
-**PASS on Bristol descriptions:** All 7 Bristol type descriptions match exactly between platforms.
-
-**PASS on Bristol emojis:** Both platforms use the same emoji set for Bristol types 1-7.
+**Findings**: Poop log sheet is the most consistent screen across platforms. All Bristol descriptions, color options, urgency options, and labels match exactly.
 
 ---
 
 ## Screen 6: FODMAP Guide Tab
+- **iOS**: `ios/ios_fodmap_guide.jpg` | **Android**: `android/android_fodmap_guide.png`
 
-### Screenshots
-- iOS: `ios/06_fodmap_guide.png`
-- Android: `android/06_fodmap_guide.png`
-
-### Comparison
-
-| Check | iOS | Android | Status |
+| Check | iOS | Android | Match? |
 |-------|-----|---------|--------|
-| Title: "FODMAP Guide" | PASS | PASS | MATCH |
-| Search bar | PASS -- "Search foods..." | PASS -- "Search foods..." | MATCH |
-| Phase selector | Elimination / Reintroduction / Maintenance (segmented) | Elimination / Reintroduction / Maintenance (segmented) | MATCH |
-| Phase description | "Elimination Phase" + "Avoid high FODMAP foods for 2-6 weeks" | "Elimination Phase" + "Avoid high FODMAP foods for 2-6 weeks" | MATCH |
-| Phase badge | "Day 8" | "Started today" | DATA DIFFERENCE |
-| Tips section | 3 tips with green checkmarks | 3 tips with green checkmarks | MATCH |
-| Tips text: "Focus on low FODMAP foods (marked green below)" | PASS | PASS | MATCH |
-| Tips text: "Keep a detailed food diary" | PASS | PASS | MATCH |
-| Tips text: "Symptoms should improve within 2-6 weeks" | PASS | PASS | MATCH |
-| Filter chips: All, Low, Moderate, High | PASS | PASS | MATCH |
-| FODMAP color coding: Green=Low | PASS -- "LOW" in green | PASS -- "Low" in green | MATCH |
-| FODMAP color coding: Orange=Moderate | PASS -- "MODERATE" in orange | PASS -- "Moderate" in orange | MATCH |
-| FODMAP color coding: Red=High | PASS -- "HIGH" in red | PASS -- "High" in red | MATCH |
-| Safe serving size shown | PASS -- "Safe: 1 cup" etc. | PASS -- "Safe: 1 medium" etc. | MATCH |
-| Food category shown | PASS -- "Beverage", "Nuts", "Fruit", etc. | PASS -- "Fruit", etc. | MATCH |
-| FODMAP subcategories shown | PASS -- "fructose, sorbitol" for Apple | PASS -- "fructans" for Banana (ripe) | MATCH |
+| Title "FODMAP Guide" | PASS | PASS | YES |
+| Search bar "Search foods..." | PASS | PASS | YES |
+| "Your FODMAP Phase" section | PASS | PASS | YES |
+| Phase tabs (Elimination/Reintroduction/Maintenance) | PASS | PASS | YES |
+| Default: Elimination | PASS | PASS | YES |
+| Phase description | "Avoid high FODMAP foods for 2-6 weeks" | Same | YES |
+| Tips section (3 tips with green checks) | PASS | PASS | YES |
+| Tip 1: "Focus on low FODMAP foods (marked green below)" | PASS | PASS | YES |
+| Tip 2: "Keep a detailed food diary" | PASS | PASS | YES |
+| Tip 3: "Symptoms should improve within 2-6 weeks" | PASS | PASS | YES |
+| Filter chips: All / Low / Moderate / High | PASS | PASS | YES |
+| Almond Milk: Beverage, LOW, Safe: 1 cup | PASS | PASS | YES |
+| Almonds: Nuts, LOW, Safe: 10 almonds | PASS | PASS | YES |
+| Apple: Fruit, fructose/sorbitol, HIGH | PASS | PASS | YES |
+| Green dots = LOW | PASS | PASS | YES |
+| Red dots = HIGH | PASS | PASS | YES |
+| FODMAP level text case | "LOW" / "MODERATE" / "HIGH" | "Low" / "High" | DIFF |
 
-**PASS:** FODMAP Guide is well-aligned between platforms. Color coding is consistent (Green=Low, Orange=Moderate, Red=High). Phase selector, search, and filter chips all match.
-
-**Minor:** iOS shows "LOW" / "MODERATE" / "HIGH" in uppercase while Android uses title case "Low" / "Moderate" / "High". This is a cosmetic difference.
+**Findings**:
+1. **(Should fix)** FODMAP level case: iOS all-caps ("LOW", "MODERATE", "HIGH"), Android title case ("Low", "High"). Should standardize.
+2. **(Minor)** Tips section is inside the phase card on iOS, separate card on Android. Same content.
 
 ---
 
 ## Screen 7: Insights Tab
+- **iOS**: `ios/ios_insights.jpg` | **Android**: `android/android_insights.png`
 
-### Screenshots
-- iOS: `ios/07_insights.png`
-- iOS report expanded top: `ios/08_insights_report_top.png`
-- iOS report expanded bottom: `ios/08_insights_report_bottom.png`
-- Android: `android/07_insights.png`
-- Android error state: `android/08_insights_error.png`
-
-### Comparison
-
-| Check | iOS | Android | Status |
+| Check | iOS | Android | Match? |
 |-------|-----|---------|--------|
-| Title: "Insights" | PASS | PASS | MATCH |
-| "Correlation Analysis" section header | PASS | PASS | MATCH |
-| Subtitle: "AI analysis of your meals, symptoms, and poop logs" | PASS | PASS | MATCH |
-| Analysis period selector: 3 Days / 7 Days / 10 Days | PASS | PASS | MATCH |
-| 7 Days selected by default (teal fill) | PASS | PASS | MATCH |
-| "Run Correlation Analysis" button | PASS -- teal, full width, with icon | PASS -- teal, full width, with icon | MATCH |
-| Helper text below button | PASS -- "Analyzes your last 7 days..." | PASS -- "Analyzes your last 7 days..." | MATCH |
-| Button disabled during analysis | PASS -- shows "Analyzing..." text | Not tested (no data) | N/A |
-| Error handling for insufficient data | N/A (has data) | PASS -- "Not enough data for correlation analysis. Keep logging meals and symptoms!" in red | PASS |
-| Empty state for reports | "Past Correlation Reports" section + "No reports yet" | "No analysis reports yet" + explanation text | MINOR DIFF |
-| Medical disclaimer in reports section | PASS -- "This is not medical advice." | PASS -- "This is not medical advice." in orange | MATCH |
-| Full medical disclaimer at bottom | PASS | PASS | MATCH |
+| Title "Insights" | PASS | PASS | YES |
+| "Correlation Analysis" section | PASS | PASS | YES |
+| Subtitle "AI analysis of your meals, symptoms, and poop logs" | PASS | PASS | YES |
+| "Analysis period" label | PASS | PASS | YES |
+| Period options: 3 Days / 7 Days / 10 Days | PASS | PASS | YES |
+| Default: 7 Days selected | PASS | PASS | YES |
+| "Run Correlation Analysis" button (teal, with icon) | PASS | PASS | YES |
+| Helper text "Analyzes your last 7 days..." | PASS | PASS | YES |
+| Empty state section header | "Past Correlation Reports" | (none) | DIFF |
+| Empty state title | "No reports yet" | "No analysis reports yet" | DIFF |
+| Empty state description | Different wording | Different wording | DIFF |
+| "This is not medical advice" in empty state | PASS | PASS | YES |
+| Full medical disclaimer at bottom | PASS | PASS | YES |
 
-### Correlation Report Format (iOS only -- has data)
+**Findings**:
+1. **(Should fix)** Empty state section header: iOS has "Past Correlation Reports" as section title. Android omits this.
+2. **(Should fix)** Empty state title and description copy differ between platforms. Should use identical text.
 
-The iOS correlation report uses a bullet-point format with 4 sections:
+---
 
-1. **Patterns Found** (magnifying glass icon)
-   - Fructans in garlic, onion, and wheat led to severe bloating and pain within 2 to 4 hours, seen 3 times on Feb 25, Feb 26, and Mar 3.
-   - Lactose in milk triggered gas and diarrhea within 90 minutes on Feb 28.
-   - Stacking sorbitol, GOS, and fructose in the Mar 3 breakfast bowl led to bloating shortly after eating.
+## Screen 8: Settings
+- **iOS**: `ios/ios_settings.jpg`, `ios/ios_settings_bottom.jpg`
+- **Android**: `android/android_settings.png`, `android/android_settings_bottom.png`
 
-2. **Stool Patterns** (warning icon)
-   - Bristol Type 6 (mushy and urgent) followed high-fructan meals on Feb 27 and lactose intake on Feb 28.
-   - Bristol Type 3 and 4 (normal) were maintained during low-FODMAP periods between Mar 1 and Mar 2.
+| Check | iOS | Android | Match? |
+|-------|-----|---------|--------|
+| Title "Settings" | PASS | PASS | YES |
+| Close button | "Done" (top-left) | "X" (top-left) | Platform-appropriate |
+| FODMAP Phase section | Dropdown picker | Radio buttons | DIFF |
+| Phase options (Elimination/Reintroduction/Maintenance) | PASS | PASS | YES |
+| Phase descriptions | Below dropdown | Inline with radio | DIFF |
+| Reminder Times section | PASS | PASS | YES |
+| Morning: 8:00 AM toggle | PASS | PASS | YES |
+| Lunch: 12:00 PM toggle | PASS | PASS | YES |
+| Dinner: 6:00 PM toggle | PASS | PASS | YES |
+| "Get reminders to log your meals at these times." | PASS | PASS | YES |
+| Notifications section | PASS | PASS | YES |
+| "Enable Notifications" toggle (off by default) | PASS | PASS | YES |
+| App Info section | PASS | PASS | YES |
+| Version display | "1.0 (1)" | "1.0.0 (1)" | DIFF |
+| "About AI Gut Health" | PASS | PASS | YES |
+| Medical Disclaimer section | PASS (full text) | PASS (full text) | YES |
+| Account section | PASS | PASS | YES |
+| "Sign Out" button | PASS | PASS | YES |
+| "Delete All Data" button | PASS | NOT PRESENT | CRITICAL |
 
-3. **What's Working** (green checkmark icon)
-   - Simple meals of chicken, white rice, eggs, and potatoes consistently resulted in zero symptoms.
-   - Gluten-free toast and oatmeal served as safe, symptom-free breakfast options on Feb 25 and Feb 26.
-
-4. **Recommendations** (lightbulb icon)
-   - Replace standard wheat bread with traditional long-fermentation sourdough (24+ hour proof).
-   - Switch to lactose-free milk or almond milk to avoid the rapid-onset diarrhea seen on Feb 28.
-   - Use garlic-infused oil instead of fresh garlic or onion to avoid fructan-induced bloating.
-
-5. **Disclaimers**
-   - "This is not medical advice -- please consult a registered dietitian or gastroenterologist for personalized guidance."
-   - "This is not medical advice" (italic)
-
-**VERDICT:** The bullet-point report format is excellent -- clear, actionable, and well-structured. It correctly uses "fructans" (not "gluten") for wheat-related triggers, correctly specifies "traditional long-fermentation sourdough," and includes appropriate medical disclaimers.
+**Findings**:
+1. **(CRITICAL)** "Delete All Data" is missing on Android. iOS has this with destructive confirmation and warning text. Google Play requires apps to provide data deletion capability. Must be added before Android release.
+2. **(Should fix)** FODMAP Phase UI differs significantly: iOS uses dropdown, Android uses radio buttons. Android approach shows all options at once (better UX). Consider standardizing.
+3. **(Should fix)** Version format: iOS "1.0 (1)" vs Android "1.0.0 (1)". Standardize.
+4. **(Minor)** Section headers: iOS all-caps ("FODMAP PHASE"), Android title case ("FODMAP Phase"). Platform convention.
+5. **(Minor)** Reminder time display: iOS uses tappable time picker buttons. Android shows static time text. Both functional.
 
 ---
 
 ## Theme and Color Consistency
 
-| Check | iOS | Android | Status |
+| Check | iOS | Android | Match? |
 |-------|-----|---------|--------|
-| Teal primary (#2AA6A6) | PASS -- used for buttons, selected states, icons | PASS -- used for buttons, selected states, icons | MATCH |
-| Green secondary (#4CAF50) | PASS -- used for checkmarks, FODMAP low indicators | PASS -- used for checkmarks, FODMAP low indicators | MATCH |
-| Tab bar with 4 tabs | PASS -- Dashboard, Log, FODMAP, Insights | PASS -- Dashboard, Log, FODMAP, Insights | MATCH |
-| Active tab indicator | Teal tint fill on icon | Teal pill background on icon | MINOR DIFF |
-| Card styling | Rounded corners, light shadow/border | Rounded corners, light shadow/border | MATCH |
+| Teal primary color | PASS | PASS | YES |
+| Green secondary color | PASS | PASS | YES |
+| Tab bar with 4 tabs | PASS | PASS | YES |
+| Active tab indicator | Teal filled icon | Teal pill background | Platform-appropriate |
+| Card styling (rounded corners, shadows) | PASS | PASS | YES |
+| Button styling (teal, rounded, full-width) | PASS | PASS | YES |
+| Typography hierarchy | PASS | PASS | YES |
 
 ---
 
@@ -290,131 +328,121 @@ The iOS correlation report uses a bullet-point format with 4 sections:
 
 | Screen | iOS | Android | Status |
 |--------|-----|---------|--------|
-| Log tab (bottom) | PASS -- full standard text | PASS -- full standard text | MATCH |
-| Meal log sheet (bottom) | PASS -- full standard text | PASS -- full standard text | MATCH |
-| Symptom log sheet (bottom) | PASS -- full standard text | PASS -- visible when scrolled | MATCH |
-| Poop log sheet (bottom) | PASS -- full standard text | PASS -- full standard text | MATCH |
-| Insights tab (reports section) | PASS -- "This is not medical advice." | PASS -- "This is not medical advice." | MATCH |
-| Insights tab (bottom) | PASS -- full standard text | PASS -- full standard text | MATCH |
-| Correlation report (when shown) | PASS -- includes disclaimer paragraph + italic line | N/A (no report data) | PASS |
+| Log tab (bottom) | PASS | PASS | MATCH |
+| Meal log sheet (bottom) | PASS | PASS | MATCH |
+| Symptom log sheet (bottom) | PASS | PASS | MATCH |
+| Poop log sheet (bottom) | PASS | PASS | MATCH |
+| Insights tab -- empty state | PASS | PASS | MATCH |
+| Insights tab -- bottom | PASS | PASS | MATCH |
+| Settings -- Medical Disclaimer section | PASS | PASS | MATCH |
 
-**PASS:** All screens that display or could display AI-generated content have medical disclaimers.
+Standard disclaimer text: "This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. This is not medical advice."
+
+All screens with AI-generated content have medical disclaimers. PASS.
 
 ---
 
 ## Issues Summary
 
-### CRITICAL Issues (Should Fix Before Release)
+### Critical Issues (Blocks Release)
 
-| # | Issue | Platforms | Screen | Details |
-|---|-------|-----------|--------|---------|
-| **C1** | **"Still ongoing?" toggle present on symptom log** | **Both iOS and Android** | Symptom Log Sheet | User specifically requested symptoms be point-in-time only with NO "Ongoing" or "Mark as Resolved". Both platforms have a "Still ongoing?" toggle defaulting to ON. **Remove this toggle from both platforms.** |
+| # | Issue | Platform | Screen |
+|---|-------|----------|--------|
+| C1 | **"Delete All Data" missing on Android** | Android | Settings |
+
+iOS Settings has "Delete All Data" with destructive confirmation and warning text ("Deleting data will permanently remove all your logged meals, symptoms, poop logs, and AI insights."). Android Settings does not have this feature. Google Play Store requires data deletion capability. Must be added before Android release.
 
 ### UX Inconsistencies (Should Fix)
 
-| # | Issue | Details |
-|---|-------|---------|
-| U1 | Location label capitalization | iOS: "Location (optional)" / Android: "Location (Optional)" |
-| U2 | Notes field format | iOS has "Notes (optional)" as a header + "Any additional details..." as placeholder; Android just has placeholder text |
-| U3 | FODMAP level capitalization | iOS: "LOW"/"MODERATE"/"HIGH" (uppercase); Android: "Low"/"Moderate"/"High" (title case) |
-| U4 | Severity slider label | iOS shows numeric "5/10" only; Android shows "Moderate" label + "5/10" |
-| U5 | Empty state messages | iOS uses two-line CTA ("No meals logged" + "Tap the Log tab to..."); Android uses single-line ("No meals logged for this day.") |
+| # | Issue | iOS | Android |
+|---|-------|-----|---------|
+| U1 | Date picker format (all log sheets) | Separate date + time buttons | "Today at [time]" + "Change" link |
+| U2 | "Location (optional)" capitalization | lowercase "optional" | uppercase "Optional" |
+| U3 | Symptom notes placeholder | "Any additional details..." | "Notes (optional)" |
+| U4 | FODMAP level case | "LOW" / "MODERATE" / "HIGH" | "Low" / "Moderate" / "High" |
+| U5 | Insights empty state copy | "Past Correlation Reports" + "No reports yet" | "No analysis reports yet" |
+| U6 | Version format | "1.0 (1)" | "1.0.0 (1)" |
+| U7 | FODMAP Phase setting UI | Dropdown picker | Radio buttons |
+| U8 | "Food Photo" label on meal log | Missing | Present |
 
 ### Minor Issues (Nice to Fix)
 
 | # | Issue | Details |
 |---|-------|---------|
-| M1 | Date picker format | iOS: separate date + time pills; Android: "Today at X:XX AM" + "Change" link |
-| M2 | Add food button style | iOS: teal circle "+"; Android: teal "Add" pill |
-| M3 | Color swatch layout | iOS: 2-row grid (4+3); Android: single row of 7 |
-| M4 | Urgency chip style | iOS: chips with icons (circle, dot, triangle); Android: plain text pills |
-| M5 | Close/cancel mechanism | iOS: "Cancel" text button; Android: X icon (platform-appropriate) |
-| M6 | Symptom type layout | iOS: 2x4 grid with SF Symbol icons in circles; Android: wrapped chip pills with emoji |
-| M7 | Active tab indicator | iOS: teal tint; Android: teal pill |
-| M8 | Section header icons | iOS: SF Symbols; Android: emoji/dots |
-| M9 | Insights empty state text wording | iOS: "Past Correlation Reports" + "No reports yet"; Android: "No analysis reports yet" |
-
----
-
-## Previously Reported Issues -- Status
-
-| Original Issue (Mar 2) | Current Status |
-|------------------------|----------------|
-| #4: Save buttons GREEN instead of TEAL (Android) | **FIXED** -- all save buttons now teal |
-| #5: No bar chart for Gut Score Trend (Android) | **FIXED** -- bar chart implemented |
-| #11: Checklist labels differ | **FIXED** -- both now use "Meal logged" / "Symptoms checked" / "Poop tracked" |
-| #10: "Today's Gut Score" missing on iOS | **FIXED** -- now present |
-| #14: "AI will identify foods" caption missing (Android) | **FIXED** -- now present |
-| #16: "Started today" phase badge missing (Android) | **FIXED** -- now shows "Started today" |
-| #24: Correlation analysis button placement | **FIXED** -- both full-width with context text |
-
----
-
-## Functional Test: Correlation Analysis
-
-| Test | Platform | Result |
-|------|----------|--------|
-| Run Correlation Analysis (with 7+ days data) | iOS | **PASS** -- completed successfully, generated bullet-point report |
-| "Analyzing..." loading state | iOS | **PASS** -- button text changes, button disabled |
-| Report displays in expandable card | iOS | **PASS** -- "Feb 24 - Mar 3" card with expand chevron |
-| Report content format | iOS | **PASS** -- 4 sections (Patterns Found, Stool Patterns, What's Working, Recommendations) with bullet points |
-| Uses "fructans" not "gluten" | iOS | **PASS** -- report says "Fructans in garlic, onion, and wheat" |
-| Specifies "traditional long-fermentation sourdough" | iOS | **PASS** -- recommendation includes "24+ hour proof" |
-| Medical disclaimer in report | iOS | **PASS** -- two disclaimer lines at end of report |
-| Run Correlation Analysis (no data) | Android | **PASS** -- shows red error "Not enough data for correlation analysis. Keep logging meals and symptoms!" |
-| Button re-enabled after error | Android | **PASS** -- button returns to normal state |
-| Time period selector (3/7/10 Days) | Both | **PASS** -- selector visible, 7 Days selected by default |
+| M1 | Severity slider visual feedback | Android has color gradient + "Moderate" label; iOS has plain slider |
+| M2 | Color picker layout (poop log) | iOS 2-row grid (4+3); Android single row of 7 |
+| M3 | Urgency chip icons | iOS has SF Symbol icons; Android text-only |
+| M4 | Checklist "Done" labels | iOS shows "Done" text; Android shows only checkmarks |
+| M5 | Onboarding page count vs spec | Both have 4 pages; CLAUDE.md specifies 6 pages |
 
 ---
 
 ## Passed Checks Summary
 
-### Dashboard Tab: 13/13 PASS
-### Log Tab: 12/12 PASS
-### Meal Log Sheet: 14/14 PASS
-### Symptom Log Sheet: 9/12 (3 issues: "Still ongoing?" toggle, capitalization, notes format)
-### Poop Log Sheet: 19/19 PASS
-### FODMAP Guide: 15/16 (1 issue: capitalization)
-### Insights Tab: 12/12 PASS
-### Theme/Color: 5/5 PASS
-### Medical Disclaimers: 7/7 PASS
-### Functional Tests: 10/10 PASS
-
-**Total: 116 / 120 individual checks = 97% on structure, 41 / 50 on cross-platform consistency = 82%**
+| Screen | Checks | Passed | Rate |
+|--------|--------|--------|------|
+| Onboarding (4 pages) | 28 | 28 | 100% |
+| Dashboard | 16 | 16 | 100% |
+| Log Tab | 8 | 8 | 100% |
+| Meal Log Sheet | 17 | 15 | 88% |
+| Symptom Log Sheet | 13 | 10 | 77% |
+| Poop Log Sheet | 20 | 20 | 100% |
+| FODMAP Guide | 17 | 16 | 94% |
+| Insights | 13 | 10 | 77% |
+| Settings | 18 | 15 | 83% |
+| Theme/Color | 7 | 7 | 100% |
+| Medical Disclaimers | 7 | 7 | 100% |
+| **Total** | **164** | **152** | **92.7%** |
 
 ---
 
-## New Screenshots (This Audit Session)
+## Screenshots Reference
 
-| Platform | File | Description |
-|----------|------|-------------|
-| iOS | `ios/01_dashboard_top.png` | Dashboard top -- streak card, checklist |
-| iOS | `ios/01_dashboard_bottom.png` | Dashboard bottom -- meals, symptoms, poop logs with data |
-| Android | `android/01_dashboard.png` | Dashboard -- full empty state |
-| iOS | `ios/02_log_tab.png` | Log tab -- 3 card options + disclaimer |
-| Android | `android/02_log_tab.png` | Log tab -- 3 card options + disclaimer |
-| iOS | `ios/03_meal_log.png` | Meal log sheet -- full form |
-| Android | `android/03_meal_log.png` | Meal log sheet -- full form |
-| iOS | `ios/04_symptom_log.png` | Symptom log sheet -- shows "Still ongoing?" toggle |
-| Android | `android/04_symptom_log.png` | Symptom log sheet -- shows "Still ongoing?" toggle |
-| iOS | `ios/05_poop_log_top.png` | Poop log sheet top -- photo, date, Bristol types |
-| iOS | `ios/05_poop_log_bottom.png` | Poop log sheet bottom -- color, urgency, notes, save |
-| Android | `android/05_poop_log_top.png` | Poop log sheet top -- photo, date, Bristol types |
-| Android | `android/05_poop_log_bottom.png` | Poop log sheet bottom -- color, urgency, notes, save |
-| iOS | `ios/06_fodmap_guide.png` | FODMAP Guide -- phase selector, tips, food list |
-| Android | `android/06_fodmap_guide.png` | FODMAP Guide -- phase selector, tips, food list |
-| iOS | `ios/07_insights.png` | Insights tab -- correlation analysis section |
-| Android | `android/07_insights.png` | Insights tab -- correlation analysis section |
-| iOS | `ios/08_insights_report_top.png` | Correlation report expanded -- Patterns Found, Stool Patterns |
-| iOS | `ios/08_insights_report_bottom.png` | Correlation report expanded -- What's Working, Recommendations, disclaimers |
-| Android | `android/08_insights_error.png` | Insights error state -- "Not enough data" message |
+### iOS (`audit/sync/ios/`)
+| File | Screen |
+|------|--------|
+| `ios_onboarding_1.jpg` | Onboarding Page 1: Welcome |
+| `ios_onboarding_2.jpg` | Onboarding Page 2: How It Works |
+| `ios_onboarding_3.jpg` | Onboarding Page 3: What to Expect |
+| `ios_onboarding_4.jpg` | Onboarding Page 4: Stay on Track |
+| `ios_dashboard.jpg` | Dashboard (populated, 8-day streak) |
+| `ios_log_tab.jpg` | Log Tab |
+| `ios_meal_log.jpg` | Meal Log Sheet |
+| `ios_symptom_log.jpg` | Symptom Log Sheet |
+| `ios_poop_log_top.jpg` | Poop Log Sheet (top: Bristol types) |
+| `ios_poop_log_bottom.jpg` | Poop Log Sheet (bottom: Color/Urgency) |
+| `ios_fodmap_guide.jpg` | FODMAP Guide Tab |
+| `ios_insights.jpg` | Insights Tab |
+| `ios_settings.jpg` | Settings (top: Phase, Reminders) |
+| `ios_settings_bottom.jpg` | Settings (bottom: Disclaimer, Account, Delete) |
+
+### Android (`audit/sync/android/`)
+| File | Screen |
+|------|--------|
+| `android_onboarding_1.png` | Onboarding Page 1: Welcome |
+| `android_onboarding_2.png` | Onboarding Page 2: How It Works |
+| `android_onboarding_3.png` | Onboarding Page 3: What to Expect |
+| `android_onboarding_4.png` | Onboarding Page 4: Stay on Track |
+| `android_dashboard.png` | Dashboard (empty state) |
+| `android_log_tab.png` | Log Tab |
+| `android_meal_log.png` | Meal Log Sheet |
+| `android_symptom_log.png` | Symptom Log Sheet |
+| `android_poop_log_top.png` | Poop Log Sheet (top: Bristol types) |
+| `android_poop_log_bottom.png` | Poop Log Sheet (bottom: Color/Urgency) |
+| `android_fodmap_guide.png` | FODMAP Guide Tab |
+| `android_insights.png` | Insights Tab |
+| `android_settings.png` | Settings (top: Phase, Reminders) |
+| `android_settings_bottom.png` | Settings (bottom: Disclaimer, Account) |
 
 ---
 
 ## Recommended Fix Priority
 
-1. **C1: Remove "Still ongoing?" toggle** from both iOS and Android symptom log sheets. This is the highest-priority fix -- it contradicts the point-in-time requirement.
-2. **U1-U2: Harmonize capitalization and notes format** between platforms (quick text changes).
-3. **U3: Pick one FODMAP level casing** (recommend title case "Low"/"Moderate"/"High" for readability).
-4. **U4-U5: Minor text alignment** for severity labels and empty states.
-5. **M1-M9: Minor cosmetic differences** are acceptable platform-appropriate variations and can be addressed at lower priority.
+1. **C1: Add "Delete All Data" to Android Settings** -- Required for Google Play Store compliance. Must be added before Android release.
+2. **U1-U3: Harmonize text/copy** between platforms (capitalization, placeholder text, date format). Quick string changes.
+3. **U4: Pick one FODMAP level casing** -- recommend title case ("Low"/"Moderate"/"High") for readability.
+4. **U5: Standardize Insights empty state** -- use identical copy on both platforms.
+5. **U6: Standardize version format** -- use "1.0.0 (1)" on both.
+6. **U7-U8: Consider standardizing** FODMAP phase UI and "Food Photo" label.
+7. **M1-M5: Minor cosmetic differences** are platform-appropriate and can be addressed at lower priority.
+8. **Onboarding**: Consider whether the 2 missing pages from spec (What Are FODMAPs, The Elimination Diet) should be added to both platforms.

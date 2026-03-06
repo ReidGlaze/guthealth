@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import UIKit
+import StoreKit
 
 public struct LogView: View {
     @State private var showingMealLog = false
@@ -22,6 +23,7 @@ public struct LogView: View {
             }
             .background(AppColors.background)
             .navigationTitle("Log")
+            .navigationBarTitleDisplayMode(.inline)
             .overlay {
                 if let msg = successMessage {
                     successToast(msg)
@@ -207,7 +209,11 @@ struct MealLogSheet: View {
     }
 
     private var photoSection: some View {
-        VStack(spacing: AppSpacing.sm) {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("Food Photo")
+                .font(AppTypography.headline)
+                .foregroundColor(AppColors.text)
+
             if let image = capturedImage {
                 Image(uiImage: image)
                     .resizable()
@@ -442,8 +448,10 @@ struct MealLogSheet: View {
             let result = try await FunctionsService.shared.analyzeFoodPhoto(imageBase64: base64, mealType: selectedMealType.rawValue)
             foods = result
             analysisComplete = true
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
         } catch {
             errorMessage = "Unable to analyze photo. You can still add foods manually."
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
         isAnalyzing = false
     }
@@ -468,6 +476,7 @@ struct MealLogSheet: View {
             }
         }
 
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
         dismiss()
         showSuccess("Meal logged!")
     }
@@ -588,6 +597,7 @@ struct SymptomLogSheet: View {
 
             Slider(value: $severity, in: 1...10, step: 1)
                 .tint(severityColor)
+                .sensoryFeedback(.selection, trigger: severity)
 
             HStack {
                 Text("Mild")
@@ -669,6 +679,7 @@ struct SymptomLogSheet: View {
             notes: notes
         )
         _ = try? await FirestoreService.shared.saveSymptom(uid: uid, symptom: symptom)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
         dismiss()
         successMessage = "Symptom logged!"
         Task {
@@ -1073,8 +1084,10 @@ struct PoopLogSheet: View {
             if !classification.observations.isEmpty {
                 notes = classification.observations
             }
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
         } catch {
             errorMessage = "Unable to classify photo. Please select the type manually."
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
         isClassifying = false
     }
@@ -1104,6 +1117,7 @@ struct PoopLogSheet: View {
             }
         }
 
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
         dismiss()
         successMessage = "Poop log saved!"
         Task {

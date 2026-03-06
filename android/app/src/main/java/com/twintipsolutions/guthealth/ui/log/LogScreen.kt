@@ -21,7 +21,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import android.view.HapticFeedbackConstants
 import com.twintipsolutions.guthealth.ui.theme.TealPrimary
 
 private enum class ActiveSheet {
@@ -31,6 +33,7 @@ private enum class ActiveSheet {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogScreen() {
+    val view = LocalView.current
     var activeSheet by remember { mutableStateOf(ActiveSheet.NONE) }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -61,10 +64,14 @@ fun LogScreen() {
                     MealLogSheet(
                         onDismiss = { activeSheet = ActiveSheet.NONE },
                         onSaved = {
+                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                             activeSheet = ActiveSheet.NONE
                             snackbarMessage = "Meal saved!"
                         },
-                        onError = { snackbarMessage = "Failed to save. Please check your connection." }
+                        onError = {
+                            view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                            snackbarMessage = "Failed to save. Please check your connection."
+                        }
                     )
                 }
             }
@@ -73,10 +80,14 @@ fun LogScreen() {
                     SymptomLogSheet(
                         onDismiss = { activeSheet = ActiveSheet.NONE },
                         onSaved = {
+                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                             activeSheet = ActiveSheet.NONE
                             snackbarMessage = "Symptom logged!"
                         },
-                        onError = { snackbarMessage = "Failed to save. Please check your connection." }
+                        onError = {
+                            view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                            snackbarMessage = "Failed to save. Please check your connection."
+                        }
                     )
                 }
             }
@@ -85,10 +96,14 @@ fun LogScreen() {
                     PoopLogSheet(
                         onDismiss = { activeSheet = ActiveSheet.NONE },
                         onSaved = {
+                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                             activeSheet = ActiveSheet.NONE
                             snackbarMessage = "Poop log saved!"
                         },
-                        onError = { snackbarMessage = "Failed to save. Please check your connection." }
+                        onError = {
+                            view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                            snackbarMessage = "Failed to save. Please check your connection."
+                        }
                     )
                 }
             }

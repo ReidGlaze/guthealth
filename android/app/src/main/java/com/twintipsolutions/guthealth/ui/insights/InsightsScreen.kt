@@ -10,13 +10,19 @@ import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import android.app.Activity
+import android.content.Context
+import android.view.HapticFeedbackConstants
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.Timestamp
 import com.twintipsolutions.guthealth.data.FirestoreService
 import com.twintipsolutions.guthealth.data.models.CorrelationReport
@@ -30,6 +36,8 @@ import java.util.Locale
 @Composable
 fun InsightsScreen() {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val view = LocalView.current
     val firestoreService = remember { FirestoreService() }
 
     var correlationReports by remember { mutableStateOf<List<CorrelationReport>>(emptyList()) }
@@ -84,6 +92,7 @@ fun InsightsScreen() {
                             val aiReport = result["aiReport"] as? String
                             if (message != null && reportId == null) {
                                 analysisError = message
+                                view.performHapticFeedback(HapticFeedbackConstants.REJECT)
                             } else if (reportId != null && aiReport != null) {
                                 val report = CorrelationReport(
                                     id = reportId,
@@ -97,9 +106,12 @@ fun InsightsScreen() {
                                     disclaimer = result["disclaimer"] as? String ?: "This is not medical advice"
                                 )
                                 correlationReports = listOf(report) + correlationReports
+                                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                                requestInAppReview(context)
                             }
                         } catch (e: Exception) {
                             analysisError = "Analysis failed: ${e.localizedMessage ?: "Unknown error"}"
+                            view.performHapticFeedback(HapticFeedbackConstants.REJECT)
                         } finally {
                             isRunningAnalysis = false
                         }
@@ -345,6 +357,20 @@ private fun CorrelationReportCard(report: CorrelationReport) {
     }
 }
 
+private fun requestInAppReview(context: Context) {
+    val prefs = context.getSharedPreferences("gut_health_prefs", Context.MODE_PRIVATE)
+    val count = prefs.getInt("correlationReportCount", 0) + 1
+    prefs.edit().putInt("correlationReportCount", count).apply()
+    // Prompt after 1st and every 3rd report thereafter
+    if (count == 1 || (count > 1 && count % 3 == 0)) {
+        val activity = context as? Activity ?: return
+        val reviewManager = ReviewManagerFactory.create(context)
+        reviewManager.requestReviewFlow().addOnSuccessListener { reviewInfo ->
+            reviewManager.launchReviewFlow(activity, reviewInfo)
+        }
+    }
+}
+
 @Composable
 private fun EmptyReportsCard() {
     Card(
@@ -367,23 +393,17 @@ private fun EmptyReportsCard() {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "No analysis reports yet",
+                text = "No reports yet",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "For best results, log meals, symptoms, and poop logs for at least 7 days, then run your first analysis. Past reports will appear here.",
+                text = "Run a correlation analysis above to get your first AI-powered gut health report. For best results, log meals, symptoms, and poop logs for at least 7 days.\n\nThis is not medical advice.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "This is not medical advice.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             )
         }
     }
