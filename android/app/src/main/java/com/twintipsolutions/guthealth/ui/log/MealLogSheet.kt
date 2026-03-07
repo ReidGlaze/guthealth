@@ -132,6 +132,38 @@ fun MealLogSheet(
 
     val mealTypes = listOf("breakfast", "lunch", "dinner", "snack")
 
+    // Auto-analyze when photo is captured or selected
+    LaunchedEffect(capturedImageBase64) {
+        val base64 = capturedImageBase64
+        if (base64 != null && analyzedFoods.isEmpty() && !isAnalyzing) {
+            isAnalyzing = true
+            analysisError = null
+            try {
+                val result = firestoreService.analyzeFoodPhoto(base64, selectedMealType)
+                @Suppress("UNCHECKED_CAST")
+                val foodsList = result["foods"] as? List<Map<String, Any>> ?: emptyList()
+                analyzedFoods = foodsList.map { foodMap ->
+                    Food(
+                        name = foodMap["name"] as? String ?: "",
+                        fodmapLevel = foodMap["fodmapLevel"] as? String ?: "unknown",
+                        fodmapCategories = (foodMap["fodmapCategories"] as? List<*>)
+                            ?.filterIsInstance<String>() ?: emptyList(),
+                        servingSize = foodMap["servingSize"] as? String ?: "",
+                        triggers = (foodMap["triggers"] as? List<*>)
+                            ?.filterIsInstance<String>() ?: emptyList()
+                    )
+                }
+                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            } catch (e: Exception) {
+                android.util.Log.e("MealLogSheet", "AI analysis failed", e)
+                analysisError = "AI analysis unavailable. You can still add foods manually."
+                view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+            } finally {
+                isAnalyzing = false
+            }
+        }
+    }
+
     if (showCamera) {
         CameraScreen(
             onImageCaptured = { base64, fileUri ->
@@ -322,68 +354,28 @@ fun MealLogSheet(
             }
         }
 
-        // Analyze with AI button
-        if (capturedImageBase64 != null && analyzedFoods.isEmpty()) {
-            Column {
-                Button(
-                    onClick = {
-                        isAnalyzing = true
-                        analysisError = null
-                        scope.launch {
-                            try {
-                                val result = firestoreService.analyzeFoodPhoto(
-                                    capturedImageBase64!!,
-                                    selectedMealType
-                                )
-                                @Suppress("UNCHECKED_CAST")
-                                val foodsList = result["foods"] as? List<Map<String, Any>> ?: emptyList()
-                                analyzedFoods = foodsList.map { foodMap ->
-                                    Food(
-                                        name = foodMap["name"] as? String ?: "",
-                                        fodmapLevel = foodMap["fodmapLevel"] as? String ?: "unknown",
-                                        fodmapCategories = (foodMap["fodmapCategories"] as? List<*>)
-                                            ?.filterIsInstance<String>() ?: emptyList(),
-                                        servingSize = foodMap["servingSize"] as? String ?: "",
-                                        triggers = (foodMap["triggers"] as? List<*>)
-                                            ?.filterIsInstance<String>() ?: emptyList()
-                                    )
-                                }
-                                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                            } catch (e: Exception) {
-                                android.util.Log.e("MealLogSheet", "AI analysis failed", e)
-                                analysisError = "AI analysis unavailable. You can still add foods manually."
-                                view.performHapticFeedback(HapticFeedbackConstants.REJECT)
-                            } finally {
-                                isAnalyzing = false
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = TealPrimary),
-                    enabled = !isAnalyzing
-                ) {
-                    if (isAnalyzing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Analyzing...")
-                    } else {
-                        Text("Analyze with AI")
-                    }
-                }
-                if (analysisError != null) {
-                    Text(
-                        text = analysisError!!,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
+        // Analyzing indicator
+        if (isAnalyzing) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = TealPrimary,
+                    strokeWidth = 2.dp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Analyzing...", color = TealPrimary)
             }
+        }
+        if (analysisError != null) {
+            Text(
+                text = analysisError!!,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
 
         // AI-analyzed foods list
@@ -556,7 +548,7 @@ fun MealLogSheet(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        val picked = Calendar.getInstance().apply { timeInMillis = millis }
+                        val picked = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply { timeInMillis = millis }
                         val current = Calendar.getInstance().apply { time = selectedDateTime }
                         current.set(Calendar.YEAR, picked.get(Calendar.YEAR))
                         current.set(Calendar.MONTH, picked.get(Calendar.MONTH))

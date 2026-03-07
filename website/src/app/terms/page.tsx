@@ -184,8 +184,8 @@ export default function TermsOfService() {
         <strong>Twin Tip Solutions LLC</strong>
         <br />
         Email:{" "}
-        <a href="mailto:support@twintipsolutions.com">
-          support@twintipsolutions.com
+        <a href="mailto:reid@twintipsolutions.com">
+          reid@twintipsolutions.com
         </a>
       </p>
     </article>

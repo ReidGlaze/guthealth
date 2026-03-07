@@ -310,7 +310,7 @@ fun SymptomLogSheet(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        val picked = Calendar.getInstance().apply { timeInMillis = millis }
+                        val picked = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply { timeInMillis = millis }
                         val current = Calendar.getInstance().apply { time = selectedDateTime }
                         current.set(Calendar.YEAR, picked.get(Calendar.YEAR))
                         current.set(Calendar.MONTH, picked.get(Calendar.MONTH))

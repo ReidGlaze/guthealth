@@ -19,6 +19,8 @@ functions/lib/
 *.p12
 *.mobileprovision
 *.keystore
+*.jks
+android/keystore.properties
 google-services.json
 GoogleService-Info.plist
 firebase-debug.log

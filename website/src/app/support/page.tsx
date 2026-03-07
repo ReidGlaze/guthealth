@@ -66,10 +66,10 @@ export default function Support() {
         </p>
         <p className="mt-2">
           <a
-            href="mailto:support@twintipsolutions.com"
+            href="mailto:reid@twintipsolutions.com"
             className="font-medium text-teal-600 hover:text-teal-700"
           >
-            support@twintipsolutions.com
+            reid@twintipsolutions.com
           </a>
         </p>
         <p className="mt-3 text-sm text-gray-500">

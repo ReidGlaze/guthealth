@@ -186,6 +186,11 @@ struct MealLogSheet: View {
                     selectedPhotoItem = nil
                 }
             }
+            .onChange(of: capturedImage) { _, newImage in
+                if newImage != nil {
+                    Task { await analyzePhoto() }
+                }
+            }
             .alert("Error", isPresented: .init(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -236,19 +241,14 @@ struct MealLogSheet: View {
                             .font(AppTypography.subhead)
                     }
 
-                    Button {
-                        Task { await analyzePhoto() }
-                    } label: {
+                    if isAnalyzing {
                         HStack(spacing: AppSpacing.xs) {
-                            if isAnalyzing {
-                                ProgressView()
-                                    .tint(AppColors.primary)
-                            }
-                            Text(isAnalyzing ? "Analyzing..." : "Analyze with AI")
+                            ProgressView()
+                                .tint(AppColors.primary)
+                            Text("Analyzing...")
                                 .font(AppTypography.subhead)
                         }
                     }
-                    .disabled(isAnalyzing)
                 }
                 .foregroundColor(AppColors.primary)
             } else {
