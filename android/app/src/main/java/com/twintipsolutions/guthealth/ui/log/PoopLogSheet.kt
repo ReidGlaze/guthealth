@@ -18,7 +18,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -61,6 +63,14 @@ private val bristolTypes = listOf(
     BristolType(6, "Type 6", "Fluffy, mushy pieces", "\u2601\uFE0F"),
     BristolType(7, "Type 7", "Watery, no solid pieces", "\uD83D\uDCA7")
 )
+
+private fun bristolTypeColor(type: Int): androidx.compose.ui.graphics.Color = when (type) {
+    1, 2 -> androidx.compose.ui.graphics.Color(0xFF8D6E63)  // amber/brown — constipation range
+    3, 4 -> androidx.compose.ui.graphics.Color(0xFF4CAF50)  // green — normal
+    5 -> androidx.compose.ui.graphics.Color(0xFFFFB74D)     // yellow — borderline
+    6, 7 -> androidx.compose.ui.graphics.Color(0xFFE57373)  // orange/red — diarrhea range
+    else -> androidx.compose.ui.graphics.Color(0xFF2AA6A6)
+}
 
 private val colorOptions = listOf(
     "brown" to Color(0xFF8D6E63),
@@ -378,16 +388,17 @@ fun PoopLogSheet(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 bristolTypes.forEach { bristol ->
                     val isSelected = selectedBristol != null && selectedBristol == bristol.type
+                    val typeColor = bristolTypeColor(bristol.type)
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { selectedBristol = bristol.type },
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) TealPrimary.copy(alpha = 0.1f)
+                            containerColor = if (isSelected) typeColor.copy(alpha = 0.1f)
                             else MaterialTheme.colorScheme.surface
                         ),
-                        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, TealPrimary) else null
+                        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, typeColor) else null
                     ) {
                         Row(
                             modifier = Modifier
@@ -405,7 +416,7 @@ fun PoopLogSheet(
                                     text = bristol.name,
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
-                                    color = if (isSelected) TealPrimary else MaterialTheme.colorScheme.onSurface
+                                    color = if (isSelected) typeColor else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = bristol.description,
@@ -417,7 +428,7 @@ fun PoopLogSheet(
                                 Icon(
                                     Icons.Default.Check,
                                     contentDescription = null,
-                                    tint = TealPrimary,
+                                    tint = typeColor,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -427,7 +438,7 @@ fun PoopLogSheet(
             }
         }
 
-        // Color selector — always visible
+        // Color selector — 4-column grid layout
         Column {
             Text(
                 text = "Color",
@@ -435,41 +446,55 @@ fun PoopLogSheet(
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                colorOptions.forEach { (colorName, colorValue) ->
-                    val isSelected = selectedColor != null && selectedColor == colorName
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable { selectedColor = colorName }
+            // 4-column grid: rows of 4
+            val rows = colorOptions.chunked(4)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                rows.forEach { rowItems ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(colorValue)
-                                .then(
-                                    if (isSelected) Modifier.border(3.dp, TealPrimary, CircleShape)
-                                    else Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), CircleShape)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isSelected) {
-                                Icon(
-                                    Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
+                        rowItems.forEach { (colorName, colorValue) ->
+                            val isSelected = selectedColor != null && selectedColor == colorName
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { selectedColor = colorName }
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(CircleShape)
+                                        .background(colorValue)
+                                        .then(
+                                            if (isSelected) Modifier.border(3.dp, TealPrimary, CircleShape)
+                                            else Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), CircleShape)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = colorName.replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isSelected) TealPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
-                        Text(
-                            text = colorName.replaceFirstChar { it.uppercase() },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (isSelected) TealPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        // Fill remaining columns in last row with spacers
+                        repeat(4 - rowItems.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }
@@ -522,10 +547,24 @@ fun PoopLogSheet(
                         "emergency" -> Color(0xFFE57373)
                         else -> TealPrimary
                     }
+                    val urgencyIcon = when (urgency) {
+                        "normal" -> Icons.Default.CheckCircle
+                        "urgent" -> Icons.Default.Warning
+                        "emergency" -> Icons.Default.Error
+                        else -> Icons.Default.CheckCircle
+                    }
                     FilterChip(
                         selected = selectedUrgency != null && selectedUrgency == urgency,
                         onClick = { selectedUrgency = if (selectedUrgency == urgency) null else urgency },
                         label = { Text(urgency.replaceFirstChar { it.uppercase() }) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = urgencyIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = if (selectedUrgency == urgency) Color.White else urgencyColor
+                            )
+                        },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = urgencyColor,
                             selectedLabelColor = Color.White

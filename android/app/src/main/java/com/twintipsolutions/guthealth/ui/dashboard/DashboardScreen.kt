@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -13,6 +14,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -149,7 +152,11 @@ fun DashboardScreen(onSettingsClick: () -> Unit = {}, onSeeAllHistory: () -> Uni
             )
         }
     ) { padding ->
-        Box(
+        val pullRefreshState = rememberPullToRefreshState()
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { loadData() },
+            state = pullRefreshState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -187,7 +194,10 @@ fun DashboardScreen(onSettingsClick: () -> Unit = {}, onSeeAllHistory: () -> Uni
                     color = TealPrimary
                 )
                 if (meals.isEmpty()) {
-                    EmptySectionNote("No meals logged for this day.")
+                    EmptySectionNote(
+                        text = "No meals logged",
+                        guidance = "Tap the Log tab to add a meal"
+                    )
                 } else {
                     meals.forEach { (id, meal) ->
                         MealEntryCard(
@@ -210,7 +220,10 @@ fun DashboardScreen(onSettingsClick: () -> Unit = {}, onSeeAllHistory: () -> Uni
                     color = Color(0xFFFFB74D)
                 )
                 if (symptoms.isEmpty()) {
-                    EmptySectionNote("No symptoms logged for this day.")
+                    EmptySectionNote(
+                        text = "No symptoms logged",
+                        guidance = "Tap the Log tab to record symptoms"
+                    )
                 } else {
                     symptoms.forEach { (id, symptom) ->
                         SymptomEntryCard(
@@ -233,7 +246,10 @@ fun DashboardScreen(onSettingsClick: () -> Unit = {}, onSeeAllHistory: () -> Uni
                     color = GreenSecondary
                 )
                 if (poopLogs.isEmpty()) {
-                    EmptySectionNote("No poop logs for this day.")
+                    EmptySectionNote(
+                        text = "No poop logs",
+                        guidance = "Tap the Log tab to track your stool"
+                    )
                 } else {
                     poopLogs.forEach { (id, log) ->
                         PoopEntryCard(
@@ -379,13 +395,21 @@ private fun SectionHeader(title: String, count: Int, icon: ImageVector, color: C
 }
 
 @Composable
-private fun EmptySectionNote(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
-    )
+private fun EmptySectionNote(text: String, guidance: String? = null) {
+    Column(modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (guidance != null) {
+            Text(
+                text = guidance,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -464,72 +488,114 @@ private fun MealEntryCard(id: String, meal: Meal, onDelete: () -> Unit) {
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
-                verticalAlignment = Alignment.Top
+                    .padding(12.dp)
             ) {
-                // Meal photo thumbnail (small, inline)
+                // Header row: meal type + food count + time
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = meal.mealType.replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TealPrimary
+                        )
+                        if (meal.foods.isNotEmpty()) {
+                            Text(
+                                text = "${meal.foods.size} food${if (meal.foods.size != 1) "s" else ""} logged",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    val timeText = meal.createdAt?.let {
+                        SimpleDateFormat("h:mm a", Locale.US).format(Date(it.seconds * 1000))
+                    } ?: ""
+                    Text(
+                        text = timeText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Meal photo — full width, ~120dp, below header
                 if (!meal.photoUrl.isNullOrEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     AsyncImage(
                         model = meal.photoUrl,
                         contentDescription = "Meal photo",
                         modifier = Modifier
-                            .size(56.dp)
+                            .fillMaxWidth()
+                            .height(120.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentScale = ContentScale.Crop
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
                 }
 
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = meal.mealType.replaceFirstChar { it.uppercase() },
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TealPrimary
-                    )
-                    if (meal.foods.isNotEmpty()) {
-                        Text(
-                            text = meal.foods.joinToString(", ") { it.name },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        // FODMAP chips
-                        val highFoods = meal.foods.filter { it.fodmapLevel == "high" }
-                        val modFoods = meal.foods.filter { it.fodmapLevel == "moderate" }
-                        if (highFoods.isNotEmpty() || modFoods.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                if (highFoods.isNotEmpty()) {
-                                    FodmapChip(label = "High FODMAP", color = Color(0xFFE57373))
-                                }
-                                if (modFoods.isNotEmpty()) {
-                                    FodmapChip(label = "Moderate", color = Color(0xFFFFB74D))
+                // Individual food items with FODMAP color dots — up to 3 + overflow
+                if (meal.foods.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val displayFoods = meal.foods.take(3)
+                    val overflowCount = meal.foods.size - 3
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        displayFoods.forEach { food ->
+                            val dotColor = when (food.fodmapLevel) {
+                                "high" -> Color(0xFFE57373)
+                                "moderate" -> Color(0xFFFFB74D)
+                                "low" -> GreenSecondary
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(dotColor)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = food.name,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (food.servingSize.isNotEmpty()) {
+                                    Text(
+                                        text = food.servingSize,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
                         }
-                    }
-                    if (meal.notes.isNotEmpty()) {
-                        Text(
-                            text = meal.notes,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        if (overflowCount > 0) {
+                            Text(
+                                text = "+$overflowCount more",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TealPrimary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
-                val timeText = meal.createdAt?.let {
-                    SimpleDateFormat("h:mm a", Locale.US).format(Date(it.seconds * 1000))
-                } ?: ""
-                Text(
-                    text = timeText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (meal.notes.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = meal.notes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -539,8 +605,24 @@ private fun MealEntryCard(id: String, meal: Meal, onDelete: () -> Unit) {
 // Symptom Entry Card
 // ---------------------------------------------------------------------------
 
+private fun symptomIcon(type: String): ImageVector {
+    return when (type.lowercase()) {
+        "bloating" -> Icons.Default.BubbleChart
+        "gas" -> Icons.Default.Air
+        "pain" -> Icons.Default.Bolt
+        "heartburn" -> Icons.Default.LocalFireDepartment
+        "nausea" -> Icons.Default.SentimentVeryDissatisfied
+        "diarrhea" -> Icons.Default.Water
+        "constipation" -> Icons.Default.PauseCircle
+        "cramping" -> Icons.Default.ElectricBolt
+        else -> Icons.Default.EditNote
+    }
+}
+
 @Composable
 private fun SymptomEntryCard(id: String, symptom: Symptom, onDelete: () -> Unit) {
+    val isSevere = symptom.severity >= 7
+
     SwipeToDeleteCard(onDelete = onDelete) {
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -555,19 +637,39 @@ private fun SymptomEntryCard(id: String, symptom: Symptom, onDelete: () -> Unit)
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.EditNote,
+                    imageVector = symptomIcon(symptom.type),
                     contentDescription = null,
                     tint = Color(0xFFFFB74D),
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = symptom.type.replaceFirstChar { it.uppercase() },
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFFFB74D)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = symptom.type.replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFFFB74D)
+                        )
+                        if (isSevere) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.error,
+                                        RoundedCornerShape(4.dp)
+                                    )
+                                    .padding(horizontal = 5.dp, vertical = 1.dp)
+                            ) {
+                                Text(
+                                    text = "Severe",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                     Text(
                         text = "Severity ${symptom.severity}/10${if (!symptom.location.isNullOrEmpty()) " \u2022 ${symptom.location}" else ""}",
                         style = MaterialTheme.typography.bodySmall,
@@ -598,9 +700,29 @@ private fun SymptomEntryCard(id: String, symptom: Symptom, onDelete: () -> Unit)
 // Poop Entry Card (photo hidden by default)
 // ---------------------------------------------------------------------------
 
+private fun bristolDescription(type: Int): String = when (type) {
+    1 -> "Separate hard lumps"
+    2 -> "Lumpy, sausage-shaped"
+    3 -> "Sausage with cracks"
+    4 -> "Smooth, soft sausage"
+    5 -> "Soft blobs with clear edges"
+    6 -> "Fluffy, mushy pieces"
+    7 -> "Watery, no solid pieces"
+    else -> ""
+}
+
+private fun bristolColor(type: Int): Color = when (type) {
+    1, 2 -> Color(0xFF8D6E63)  // amber/brown — constipation range
+    3, 4 -> Color(0xFF4CAF50)  // green — normal
+    5 -> Color(0xFFFFB74D)     // yellow — borderline
+    6, 7 -> Color(0xFFE57373)  // orange/red — diarrhea range
+    else -> GreenSecondary
+}
+
 @Composable
 private fun PoopEntryCard(id: String, log: PoopLog, onDelete: () -> Unit) {
     var photoVisible by remember { mutableStateOf(false) }
+    val typeColor = bristolColor(log.bristolType)
 
     SwipeToDeleteCard(onDelete = onDelete) {
         Card(
@@ -621,7 +743,7 @@ private fun PoopEntryCard(id: String, log: PoopLog, onDelete: () -> Unit) {
                     Icon(
                         imageVector = Icons.Default.WaterDrop,
                         contentDescription = null,
-                        tint = GreenSecondary,
+                        tint = typeColor,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -630,13 +752,63 @@ private fun PoopEntryCard(id: String, log: PoopLog, onDelete: () -> Unit) {
                             text = "Bristol Type ${log.bristolType}",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = GreenSecondary
+                            color = typeColor
                         )
-                        Text(
-                            text = "${log.color.replaceFirstChar { it.uppercase() }} \u2022 ${log.urgency.replaceFirstChar { it.uppercase() }}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        val desc = bristolDescription(log.bristolType)
+                        if (desc.isNotEmpty()) {
+                            Text(
+                                text = desc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = log.color.replaceFirstChar { it.uppercase() },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "\u2022",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            // Urgency badge
+                            when (log.urgency.lowercase()) {
+                                "emergency" -> Box(
+                                    modifier = Modifier
+                                        .background(Color(0xFFE57373), RoundedCornerShape(4.dp))
+                                        .padding(horizontal = 5.dp, vertical = 1.dp)
+                                ) {
+                                    Text(
+                                        text = "Emergency",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                "urgent" -> Box(
+                                    modifier = Modifier
+                                        .background(Color(0xFFFFB74D), RoundedCornerShape(4.dp))
+                                        .padding(horizontal = 5.dp, vertical = 1.dp)
+                                ) {
+                                    Text(
+                                        text = "Urgent",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                else -> Text(
+                                    text = log.urgency.replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                         if (log.notes.isNotEmpty()) {
                             Text(
                                 text = log.notes,

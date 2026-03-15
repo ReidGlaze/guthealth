@@ -11,14 +11,21 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.twintipsolutions.guthealth.data.FirestoreService
@@ -34,11 +41,27 @@ fun FODMAPGuideScreen() {
     val context = LocalContext.current
     val firestoreService = remember { FirestoreService() }
     val fodmapRepository = remember { FodmapRepository.getInstance(context) }
+    val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf<String?>(null) }
     var isInfoExpanded by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
     val allFoods by fodmapRepository.foods.collectAsState()
+
+    fun loadData() {
+        scope.launch {
+            isRefreshing = true
+            try {
+                firestoreService.signInAnonymously()
+                fodmapRepository.refreshIfNeeded()
+            } catch (_: Exception) {
+            } finally {
+                isRefreshing = false
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         try {
@@ -57,105 +80,157 @@ fun FODMAPGuideScreen() {
             )
         }
     ) { padding ->
-        Column(
+        val pullRefreshState = rememberPullToRefreshState()
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { loadData() },
+            state = pullRefreshState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Search bar — above phase card, matches iOS
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search foods...") },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
-                },
-                trailingIcon = if (searchQuery.isNotEmpty()) {
-                    {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear search")
-                        }
-                    }
-                } else null,
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true
-            )
-
-            // What is FODMAP? expandable info card
-            WhatIsFodmapCard(
-                isExpanded = isInfoExpanded,
-                onToggle = { isInfoExpanded = !isInfoExpanded }
-            )
-
-            // Filter chips
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                val filters = listOf(null to "All", "low" to "Low", "moderate" to "Moderate", "high" to "High")
-                filters.forEach { (level, label) ->
-                    val isSelected = selectedFilter == level
-                    val chipColor = when (level) {
-                        "low" -> GreenSecondary
-                        "moderate" -> Color(0xFFFFB74D)
-                        "high" -> Color(0xFFE57373)
-                        else -> TealPrimary
-                    }
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { selectedFilter = level },
-                        label = { Text(label) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = chipColor,
-                            selectedLabelColor = Color.White
-                        )
-                    )
-                }
-            }
-
-            // Filtered food list
-            val displayedFoods = allFoods.filter { food ->
-                val matchesFilter = selectedFilter == null || food.fodmapLevel == selectedFilter
-                val matchesSearch = searchQuery.length < 2 || food.name.contains(searchQuery, ignoreCase = true) ||
-                    food.category.contains(searchQuery, ignoreCase = true)
-                matchesFilter && matchesSearch
-            }
-
-            if (displayedFoods.isEmpty()) {
-                Card(
+                // Search bar — above phase card, matches iOS
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
                     modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search foods...") },
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
+                    },
+                    trailingIcon = if (searchQuery.isNotEmpty()) {
+                        {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                            }
+                        }
+                    } else null,
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    )
+                    singleLine = true
+                )
+
+                // What is FODMAP? expandable info card
+                WhatIsFodmapCard(
+                    isExpanded = isInfoExpanded,
+                    onToggle = { isInfoExpanded = !isInfoExpanded }
+                )
+
+                // Filter chips
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = if (searchQuery.length >= 2) "No foods found matching \"$searchQuery\". Try a different search term."
-                               else "No foods found for this filter.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    val filters = listOf(null to "All", "low" to "Low", "moderate" to "Moderate", "high" to "High")
+                    filters.forEach { (level, label) ->
+                        val isSelected = selectedFilter == level
+                        val chipColor = when (level) {
+                            "low" -> GreenSecondary
+                            "moderate" -> Color(0xFFFFB74D)
+                            "high" -> Color(0xFFE57373)
+                            else -> TealPrimary
+                        }
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { selectedFilter = level },
+                            label = { Text(label) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = chipColor,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
                 }
-            } else {
-                displayedFoods.forEach { food ->
-                    FodmapFoodRow(food = food)
+
+                // Filtered food list
+                val displayedFoods = allFoods.filter { food ->
+                    val matchesFilter = selectedFilter == null || food.fodmapLevel == selectedFilter
+                    val matchesSearch = searchQuery.length < 2 || food.name.contains(searchQuery, ignoreCase = true) ||
+                        food.category.contains(searchQuery, ignoreCase = true)
+                    matchesFilter && matchesSearch
+                }
+
+                if (displayedFoods.isEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Text(
+                            text = if (searchQuery.length >= 2) "No foods found matching \"$searchQuery\". Try a different search term."
+                                   else "No foods found for this filter.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                } else {
+                    displayedFoods.forEach { food ->
+                        FodmapFoodRow(food = food)
+                    }
+                }
+
+                // Research attribution footer with clickable Monash link
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    val monashText = buildAnnotatedString {
+                        append("FODMAP data based on research by ")
+                        pushStringAnnotation(tag = "URL", annotation = "https://www.monashfodmap.com")
+                        withStyle(
+                            style = SpanStyle(
+                                color = TealPrimary,
+                                textDecoration = TextDecoration.Underline
+                            )
+                        ) {
+                            append("Monash University")
+                        }
+                        pop()
+                    }
+                    ClickableText(
+                        text = monashText,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        ),
+                        onClick = { offset ->
+                            monashText.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                                .firstOrNull()?.let { uriHandler.openUri(it.item) }
+                        }
+                    )
+                    Text(
+                        text = "This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. This is not medical advice. Consult a dietitian for personalized FODMAP guidance.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
-
-            // Disclaimer
-            Text(
-                text = "This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. This is not medical advice. Consult a dietitian for personalized FODMAP guidance.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
         }
     }
+}
+
+@Composable
+private fun ClickableText(
+    text: androidx.compose.ui.text.AnnotatedString,
+    style: androidx.compose.ui.text.TextStyle,
+    onClick: (Int) -> Unit
+) {
+    androidx.compose.foundation.text.ClickableText(
+        text = text,
+        style = style,
+        onClick = onClick
+    )
 }
 
 @Composable

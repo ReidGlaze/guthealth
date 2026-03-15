@@ -141,6 +141,10 @@ public actor FirestoreService {
         try await db.collection("users").document(uid).collection("poopLogs").document(logId).delete()
     }
 
+    public func deleteCorrelationReport(uid: String, reportId: String) async throws {
+        try await db.collection("users").document(uid).collection("correlationReports").document(reportId).delete()
+    }
+
     // MARK: - Meals by Date
 
     public func getMealsForDate(uid: String, date: Date) async throws -> [Meal] {

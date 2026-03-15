@@ -674,9 +674,13 @@ fun FoodResultCard(food: Food, safeFodmapServing: String? = null, onRemove: (() 
                     }
                 }
             }
-            // Serving size warning: show whenever we have safe serving data from FODMAP database
-            if (!safeFodmapServing.isNullOrBlank()) {
-                val estimatedLabel = if (food.servingSize.isNotBlank()) food.servingSize else "unknown portion"
+            // Serving size warning: only show when the estimated serving actually differs from safe serving
+            val estimatedServing = food.servingSize.trim()
+            val safeServing = safeFodmapServing?.trim()
+            val servingsAreDifferent = !safeServing.isNullOrBlank() &&
+                estimatedServing.isNotBlank() &&
+                !estimatedServing.equals(safeServing, ignoreCase = true)
+            if (servingsAreDifferent && safeServing != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -695,7 +699,7 @@ fun FoodResultCard(food: Food, safeFodmapServing: String? = null, onRemove: (() 
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Estimated: $estimatedLabel | Safe: $safeFodmapServing",
+                        text = "Estimated: $estimatedServing | Safe FODMAP serving: $safeServing",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFFFFB74D)
                     )

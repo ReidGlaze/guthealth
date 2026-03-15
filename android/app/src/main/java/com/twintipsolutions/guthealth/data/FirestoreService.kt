@@ -389,6 +389,10 @@ class FirestoreService {
         userDoc().collection("poopLogs").document(logId).delete().await()
     }
 
+    suspend fun deleteCorrelationReport(reportId: String) {
+        userDoc().collection("correlationReports").document(reportId).delete().await()
+    }
+
     // --- Helpers ---
     private fun getStartOfDay(): Date {
         val cal = Calendar.getInstance()

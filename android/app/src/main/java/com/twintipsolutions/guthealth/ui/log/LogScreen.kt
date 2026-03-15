@@ -174,6 +174,15 @@ fun LogScreen() {
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp)
                     )
+                    Text(
+                        text = "FODMAP data based on Monash University research. Bristol Stool Chart: Lewis & Heaton, 1997.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                    )
                 }
             }
         }

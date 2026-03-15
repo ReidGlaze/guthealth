@@ -8,7 +8,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import android.app.Activity
 import android.content.Context
@@ -29,8 +34,10 @@ import com.twintipsolutions.guthealth.data.models.CorrelationReport
 import com.twintipsolutions.guthealth.ui.theme.TealPrimary
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,17 +51,65 @@ fun InsightsScreen() {
     var isRunningAnalysis by remember { mutableStateOf(false) }
     var analysisError by remember { mutableStateOf<String?>(null) }
     var selectedDays by remember { mutableStateOf(7) }
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    // Delete confirmation state
+    var reportToDelete by remember { mutableStateOf<String?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     fun loadData() {
         scope.launch {
+            isRefreshing = true
             try {
                 firestoreService.signInAnonymously()
                 correlationReports = firestoreService.getCorrelationReports()
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            } finally {
+                isRefreshing = false
+            }
         }
     }
 
     LaunchedEffect(Unit) { loadData() }
+
+    // Delete confirmation dialog
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false; reportToDelete = null },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { Text("Delete Report?") },
+            text = { Text("This will permanently delete this correlation report. This cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val id = reportToDelete
+                        showDeleteDialog = false
+                        reportToDelete = null
+                        if (id != null) {
+                            scope.launch {
+                                try {
+                                    firestoreService.deleteCorrelationReport(id)
+                                    correlationReports = correlationReports.filter { it.id != id }
+                                } catch (_: Exception) {}
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false; reportToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -66,69 +121,82 @@ fun InsightsScreen() {
             )
         }
     ) { padding ->
-        Column(
+        val pullRefreshState = rememberPullToRefreshState()
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { loadData() },
+            state = pullRefreshState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Correlation analysis section
-            CorrelationReportsCard(
-                reports = correlationReports,
-                isRunningAnalysis = isRunningAnalysis,
-                analysisError = analysisError,
-                selectedDays = selectedDays,
-                onSelectedDaysChange = { selectedDays = it },
-                onRunAnalysis = {
-                    isRunningAnalysis = true
-                    analysisError = null
-                    scope.launch {
-                        try {
-                            val result = firestoreService.runCorrelationEngine(daysBack = selectedDays)
-                            val message = result["message"] as? String
-                            val reportId = result["reportId"] as? String
-                            val aiReport = result["aiReport"] as? String
-                            if (message != null && reportId == null) {
-                                analysisError = message
-                                view.performHapticFeedback(HapticFeedbackConstants.REJECT)
-                            } else if (reportId != null && aiReport != null) {
-                                val report = CorrelationReport(
-                                    id = reportId,
-                                    createdAt = Timestamp.now(),
-                                    periodStart = result["periodStart"] as? String ?: "",
-                                    periodEnd = result["periodEnd"] as? String ?: "",
-                                    mealsAnalyzed = (result["mealsAnalyzed"] as? Number)?.toInt() ?: 0,
-                                    symptomsAnalyzed = (result["symptomsAnalyzed"] as? Number)?.toInt() ?: 0,
-                                    poopLogsAnalyzed = (result["poopLogsAnalyzed"] as? Number)?.toInt() ?: 0,
-                                    aiReport = aiReport,
-                                    disclaimer = result["disclaimer"] as? String ?: "This is not medical advice"
-                                )
-                                correlationReports = listOf(report) + correlationReports
-                                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                                requestInAppReview(context)
-                            }
-                        } catch (e: Exception) {
-                            analysisError = "Analysis failed: ${e.localizedMessage ?: "Unknown error"}"
-                            view.performHapticFeedback(HapticFeedbackConstants.REJECT)
-                        } finally {
-                            isRunningAnalysis = false
-                        }
-                    }
-                }
-            )
-
-            // Page-level disclaimer
-            Text(
-                text = "This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. This is not medical advice.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                textAlign = TextAlign.Center,
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Correlation analysis section
+                CorrelationReportsCard(
+                    reports = correlationReports,
+                    isRunningAnalysis = isRunningAnalysis,
+                    analysisError = analysisError,
+                    selectedDays = selectedDays,
+                    onSelectedDaysChange = { selectedDays = it },
+                    onRunAnalysis = {
+                        isRunningAnalysis = true
+                        analysisError = null
+                        scope.launch {
+                            try {
+                                val result = firestoreService.runCorrelationEngine(daysBack = selectedDays)
+                                val message = result["message"] as? String
+                                val reportId = result["reportId"] as? String
+                                val aiReport = result["aiReport"] as? String
+                                if (message != null && reportId == null) {
+                                    analysisError = message
+                                    view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                                } else if (reportId != null && aiReport != null) {
+                                    val report = CorrelationReport(
+                                        id = reportId,
+                                        createdAt = Timestamp.now(),
+                                        periodStart = result["periodStart"] as? String ?: "",
+                                        periodEnd = result["periodEnd"] as? String ?: "",
+                                        mealsAnalyzed = (result["mealsAnalyzed"] as? Number)?.toInt() ?: 0,
+                                        symptomsAnalyzed = (result["symptomsAnalyzed"] as? Number)?.toInt() ?: 0,
+                                        poopLogsAnalyzed = (result["poopLogsAnalyzed"] as? Number)?.toInt() ?: 0,
+                                        aiReport = aiReport,
+                                        disclaimer = result["disclaimer"] as? String ?: "This is not medical advice"
+                                    )
+                                    correlationReports = listOf(report) + correlationReports
+                                    view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                                    requestInAppReview(context)
+                                }
+                            } catch (e: Exception) {
+                                analysisError = "Analysis failed: ${e.localizedMessage ?: "Unknown error"}"
+                                view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                            } finally {
+                                isRunningAnalysis = false
+                            }
+                        }
+                    },
+                    onDeleteReport = { reportId ->
+                        reportToDelete = reportId
+                        showDeleteDialog = true
+                    }
+                )
+
+                // Page-level disclaimer
+                Text(
+                    text = "This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. This is not medical advice. Analysis based on FODMAP research by Monash University and the Bristol Stool Chart (Lewis & Heaton, 1997).",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
         }
     }
 }
@@ -177,7 +245,8 @@ private fun CorrelationReportsCard(
     analysisError: String?,
     selectedDays: Int,
     onSelectedDaysChange: (Int) -> Unit,
-    onRunAnalysis: () -> Unit
+    onRunAnalysis: () -> Unit,
+    onDeleteReport: (String) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -267,25 +336,60 @@ private fun CorrelationReportsCard(
     // Past reports list
     if (reports.isNotEmpty()) {
         reports.forEach { report ->
-            CorrelationReportCard(report = report)
+            CorrelationReportCard(
+                report = report,
+                onDelete = { onDeleteReport(report.id) }
+            )
         }
     } else {
         EmptyReportsCard()
     }
 }
 
-private val reportDateFormat = SimpleDateFormat("MMM d, yyyy", Locale.US)
+private val reportPeriodDateFormat = SimpleDateFormat("MMM d", Locale.US)
+private val reportFullDateFormat = SimpleDateFormat("MMM d, yyyy", Locale.US)
+
+/**
+ * Formats an ISO date string like "2026-03-07" to "Mar 7"
+ */
+private fun formatPeriodDate(isoDate: String): String {
+    return try {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val date = sdf.parse(isoDate)
+        if (date != null) reportPeriodDateFormat.format(date) else isoDate
+    } catch (_: Exception) {
+        isoDate
+    }
+}
+
+/**
+ * Returns relative date string: "today", "yesterday", "X days ago"
+ */
+private fun relativeDate(timestamp: Timestamp?): String {
+    if (timestamp == null) return ""
+    val reportMs = timestamp.seconds * 1000L
+    val nowMs = System.currentTimeMillis()
+    val diffDays = TimeUnit.MILLISECONDS.toDays(nowMs - reportMs)
+    return when {
+        diffDays == 0L -> "Generated today"
+        diffDays == 1L -> "Generated yesterday"
+        diffDays < 30L -> "Generated ${diffDays} days ago"
+        else -> "Generated ${reportFullDateFormat.format(Date(reportMs))}"
+    }
+}
 
 @Composable
-private fun CorrelationReportCard(report: CorrelationReport) {
+private fun CorrelationReportCard(report: CorrelationReport, onDelete: () -> Unit) {
+    var isExpanded by remember { mutableStateOf(false) }
+
     val dateLabel = buildString {
         if (report.periodStart.isNotEmpty() && report.periodEnd.isNotEmpty()) {
-            append(report.periodStart)
-            append(" \u2014 ")
-            append(report.periodEnd)
+            append(formatPeriodDate(report.periodStart))
+            append(" \u2013 ")
+            append(formatPeriodDate(report.periodEnd))
         } else {
             report.createdAt?.let { ts ->
-                append(reportDateFormat.format(Date(ts.seconds * 1000)))
+                append(reportFullDateFormat.format(Date(ts.seconds * 1000)))
             }
         }
     }
@@ -298,6 +402,8 @@ private fun CorrelationReportCard(report: CorrelationReport) {
         append(parts.joinToString(" \u2022 "))
     }
 
+    val generatedLabel = relativeDate(report.createdAt)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -309,6 +415,7 @@ private fun CorrelationReportCard(report: CorrelationReport) {
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
+            // Header row — always visible, tappable to expand
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -334,25 +441,59 @@ private fun CorrelationReportCard(report: CorrelationReport) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    if (generatedLabel.isNotEmpty()) {
+                        Text(
+                            text = generatedLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+                // Delete button
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete report",
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                // Expand/collapse chevron
+                IconButton(
+                    onClick = { isExpanded = !isExpanded },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
-            if (report.aiReport.isNotEmpty()) {
+            // Expanded content
+            if (isExpanded) {
+                if (report.aiReport.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = report.aiReport,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        lineHeight = 22.sp
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = report.aiReport,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    lineHeight = 22.sp
+                    text = report.disclaimer.ifEmpty { "This is not medical advice." },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 )
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = report.disclaimer.ifEmpty { "This is not medical advice." },
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
         }
     }
 }

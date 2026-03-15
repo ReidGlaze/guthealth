@@ -172,7 +172,7 @@ public struct SettingsView: View {
                     Text("Medical Disclaimer")
                         .font(AppTypography.headline)
                 }
-                Text("AI Gut Health & IBS Tracker is an educational wellness tool. It is not intended to provide medical advice, diagnosis, or treatment recommendations. Always consult a qualified healthcare professional before making dietary changes or medical decisions. The AI-generated content in this app is for informational purposes only.")
+                Text("AI Gut Health & IBS Tracker is an educational wellness tool based on peer-reviewed research from Monash University (FODMAP data) and the Bristol Stool Chart (Lewis & Heaton, 1997). It is not intended to provide medical advice, diagnosis, or treatment recommendations. Always consult a qualified healthcare professional before making dietary changes or medical decisions. The AI-generated content in this app is for informational purposes only.")
                     .font(AppTypography.footnote)
                     .foregroundColor(AppColors.textSecondary)
             }
@@ -253,6 +253,42 @@ public struct SettingsView: View {
 
                     Divider()
 
+                    Text("Sources & References")
+                        .font(AppTypography.title3)
+                        .foregroundColor(AppColors.text)
+
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("The health information in this app is based on the following peer-reviewed and institutional sources:")
+                            .font(AppTypography.footnote)
+                            .foregroundColor(AppColors.textSecondary)
+
+                        sourceLink(
+                            title: "FODMAP Diet Data",
+                            detail: "Monash University — pioneers of the low-FODMAP diet and the gold standard for FODMAP food classifications and safe serving sizes.",
+                            url: "https://www.monashfodmap.com"
+                        )
+
+                        sourceLink(
+                            title: "Bristol Stool Chart",
+                            detail: "Lewis SJ, Heaton KW. \"Stool Form Scale as a Useful Guide to Intestinal Transit Time.\" Scandinavian Journal of Gastroenterology, 1997;32(9):920-924.",
+                            url: "https://pubmed.ncbi.nlm.nih.gov/9299672/"
+                        )
+
+                        sourceLink(
+                            title: "IBS & Digestive Health",
+                            detail: "International Foundation for Gastrointestinal Disorders (IFFGD) — patient education on IBS symptoms, diagnosis, and management.",
+                            url: "https://iffgd.org"
+                        )
+
+                        sourceLink(
+                            title: "Low-FODMAP Diet Evidence",
+                            detail: "Halmos EP, et al. \"A Diet Low in FODMAPs Reduces Symptoms of Irritable Bowel Syndrome.\" Gastroenterology, 2014;146(1):67-75.",
+                            url: "https://pubmed.ncbi.nlm.nih.gov/24076059/"
+                        )
+                    }
+
+                    Divider()
+
                     Text("Privacy")
                         .font(AppTypography.title3)
                         .foregroundColor(AppColors.text)
@@ -260,6 +296,20 @@ public struct SettingsView: View {
                     Text("This app uses anonymous authentication. We do not collect personally identifiable information. Your health data is stored securely in Firebase and can be deleted at any time from Settings.")
                         .font(AppTypography.footnote)
                         .foregroundColor(AppColors.textSecondary)
+
+                    HStack(spacing: AppSpacing.lg) {
+                        if let privacyURL = URL(string: "https://guthealth.twintipsolutions.com/privacy") {
+                            Link("Privacy Policy", destination: privacyURL)
+                                .font(AppTypography.subhead)
+                                .foregroundColor(AppColors.primary)
+                        }
+                        if let termsURL = URL(string: "https://guthealth.twintipsolutions.com/terms") {
+                            Link("Terms of Service", destination: termsURL)
+                                .font(AppTypography.subhead)
+                                .foregroundColor(AppColors.primary)
+                        }
+                    }
+                    .padding(.top, AppSpacing.xs)
                 }
                 .padding(AppSpacing.lg)
             }
@@ -272,6 +322,29 @@ public struct SettingsView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Source Link Helper
+
+    private func sourceLink(title: String, detail: String, url: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(AppTypography.subhead)
+                .fontWeight(.semibold)
+                .foregroundColor(AppColors.text)
+            Text(detail)
+                .font(AppTypography.caption1)
+                .foregroundColor(AppColors.textSecondary)
+            if let linkURL = URL(string: url) {
+                Link(url, destination: linkURL)
+                    .font(AppTypography.caption1)
+                    .foregroundColor(AppColors.primary)
+            }
+        }
+        .padding(AppSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.primaryContainer)
+        .cornerRadius(AppRadius.sm)
     }
 
     // MARK: - Data Loading

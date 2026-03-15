@@ -172,12 +172,23 @@ public struct FODMAPGuideView: View {
                             .listRowBackground(AppColors.surfaceElevated)
                     }
                     Section {
-                        Text("This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. This is not medical advice. Consult a dietitian for personalized FODMAP guidance.")
-                            .font(AppTypography.caption1)
-                            .foregroundColor(AppColors.textTertiary)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                            .listRowBackground(Color.clear)
+                        VStack(spacing: AppSpacing.sm) {
+                            Text("FODMAP data based on research by Monash University, the leading authority on the low-FODMAP diet.")
+                                .font(AppTypography.caption1)
+                                .foregroundColor(AppColors.textTertiary)
+                                .multilineTextAlignment(.center)
+                            if let url = URL(string: "https://www.monashfodmap.com") {
+                                Link("monashfodmap.com", destination: url)
+                                    .font(AppTypography.caption1)
+                                    .foregroundColor(AppColors.primary)
+                            }
+                            Text("This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. Consult a dietitian for personalized FODMAP guidance.")
+                                .font(AppTypography.caption1)
+                                .foregroundColor(AppColors.textTertiary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .listRowBackground(Color.clear)
                     }
                 }
                 .listStyle(.plain)

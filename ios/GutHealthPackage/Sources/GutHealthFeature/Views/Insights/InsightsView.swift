@@ -9,6 +9,7 @@ public struct InsightsView: View {
     @State private var analysisError: String? = nil
     @State private var expandedReportId: String? = nil
     @State private var selectedDaysBack: Int = 7
+    @State private var reportToDelete: CorrelationReport? = nil
 
     private let dayOptions: [(label: String, value: Int)] = [
         ("3 Days", 3),
@@ -39,6 +40,19 @@ public struct InsightsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .task { await loadData() }
             .refreshable { await loadData() }
+            .alert("Delete Report?", isPresented: Binding(
+                get: { reportToDelete != nil },
+                set: { if !$0 { reportToDelete = nil } }
+            )) {
+                Button("Cancel", role: .cancel) { reportToDelete = nil }
+                Button("Delete", role: .destructive) {
+                    if let report = reportToDelete {
+                        Task { await deleteReport(report) }
+                    }
+                }
+            } message: {
+                Text("This correlation report will be permanently deleted.")
+            }
         }
     }
 
@@ -136,6 +150,13 @@ public struct InsightsView: View {
             } else {
                 ForEach(correlationReports) { report in
                     reportCard(report)
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                reportToDelete = report
+                            } label: {
+                                Label("Delete Report", systemImage: "trash")
+                            }
+                        }
                 }
             }
         }
@@ -196,10 +217,11 @@ public struct InsightsView: View {
                         .foregroundColor(AppColors.textTertiary)
                         .italic()
                 } else {
-                    Text(report.aiReport)
+                    Text(.init(report.aiReport))
                         .font(AppTypography.footnote)
                         .foregroundColor(AppColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
+                        .tint(AppColors.primary)
                 }
 
                 Divider()
@@ -210,6 +232,20 @@ public struct InsightsView: View {
                     .foregroundColor(AppColors.textTertiary)
                     .italic()
                     .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button(role: .destructive) {
+                    reportToDelete = report
+                } label: {
+                    HStack(spacing: AppSpacing.xs) {
+                        Image(systemName: "trash")
+                        Text("Delete Report")
+                    }
+                    .font(AppTypography.subhead)
+                    .foregroundColor(AppColors.error)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.sm)
+                }
+                .padding(.top, AppSpacing.xs)
             }
         }
         .padding(AppSpacing.md)
@@ -256,11 +292,29 @@ public struct InsightsView: View {
     }
 
     private var disclaimerView: some View {
-        Text("This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. This is not medical advice.")
-            .font(AppTypography.caption2)
-            .foregroundColor(AppColors.textTertiary)
-            .multilineTextAlignment(.center)
-            .padding(AppSpacing.md)
+        VStack(spacing: AppSpacing.sm) {
+            Text("Analysis based on FODMAP research by Monash University and the Bristol Stool Chart (Lewis & Heaton, 1997). Always consult your doctor before making health decisions.")
+                .font(AppTypography.caption2)
+                .foregroundColor(AppColors.textTertiary)
+                .multilineTextAlignment(.center)
+            HStack(spacing: AppSpacing.md) {
+                if let monashURL = URL(string: "https://www.monashfodmap.com") {
+                    Link("Monash FODMAP", destination: monashURL)
+                        .font(AppTypography.caption2)
+                        .foregroundColor(AppColors.primary)
+                }
+                if let bristolURL = URL(string: "https://pubmed.ncbi.nlm.nih.gov/9299672/") {
+                    Link("Bristol Stool Chart", destination: bristolURL)
+                        .font(AppTypography.caption2)
+                        .foregroundColor(AppColors.primary)
+                }
+            }
+            Text("This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. This is not medical advice.")
+                .font(AppTypography.caption2)
+                .foregroundColor(AppColors.textTertiary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(AppSpacing.md)
     }
 
     // MARK: - Date Formatting
@@ -338,6 +392,21 @@ public struct InsightsView: View {
             UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
         isRunningAnalysis = false
+    }
+
+    private func deleteReport(_ report: CorrelationReport) async {
+        guard let uid = authService.currentUserId, let reportId = report.id else { return }
+        do {
+            try await FirestoreService.shared.deleteCorrelationReport(uid: uid, reportId: reportId)
+            withAnimation {
+                correlationReports.removeAll { $0.id == reportId }
+            }
+            if expandedReportId == reportId {
+                expandedReportId = nil
+            }
+        } catch {
+            analysisError = "Failed to delete report: \(error.localizedDescription)"
+        }
     }
 
     private func requestInAppReview() {

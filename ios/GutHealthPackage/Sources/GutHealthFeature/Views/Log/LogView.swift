@@ -99,11 +99,17 @@ public struct LogView: View {
     // MARK: - Disclaimer
 
     private var disclaimerView: some View {
-        Text("This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. This is not medical advice.")
-            .font(AppTypography.caption2)
-            .foregroundColor(AppColors.textTertiary)
-            .multilineTextAlignment(.center)
-            .padding(AppSpacing.md)
+        VStack(spacing: AppSpacing.xs) {
+            Text("FODMAP data based on Monash University research. Bristol Stool Chart: Lewis & Heaton, 1997. Always consult your doctor before making health decisions.")
+                .font(AppTypography.caption2)
+                .foregroundColor(AppColors.textTertiary)
+                .multilineTextAlignment(.center)
+            Text("This is an educational wellness tool. It is not intended to diagnose, treat, or cure any medical condition. This is not medical advice.")
+                .font(AppTypography.caption2)
+                .foregroundColor(AppColors.textTertiary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(AppSpacing.md)
     }
 
     // MARK: - Success Toast

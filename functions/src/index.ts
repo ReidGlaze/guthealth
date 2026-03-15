@@ -477,6 +477,7 @@ RULES:
 - Start each bullet with the bullet character: •
 - Do NOT use em dashes (—). Use commas or periods instead.
 - Do NOT write flowing paragraphs. Bullets only.
+- Do NOT use markdown formatting. No hash symbols, asterisks, underscores, or backticks. Plain text only with emoji headers and bullet points.
 - If a section has nothing meaningful, write one bullet: "Not enough data yet."
 - Do NOT include the disclaimer in the report body (it is added separately).
 
@@ -484,6 +485,11 @@ RULES:
    - Always use "fructans" (not "gluten") for wheat, garlic, onion triggers. Gluten is a celiac concern; fructans are the FODMAP issue.
    - When recommending sourdough, specify "traditional long-fermentation sourdough (24+ hour proof)".
    - Use FODMAP subcategory names: fructans, GOS, lactose, fructose, mannitol, sorbitol.
+
+7. At the very end of the report, add a "Sources" section with these EXACT bullets (do not modify the URLs):
+   • FODMAP data: [Monash University](https://www.monashfodmap.com)
+   • Stool classification: [Bristol Stool Chart, Lewis & Heaton, 1997](https://pubmed.ncbi.nlm.nih.gov/9299672/)
+   • Low-FODMAP diet evidence: [Halmos et al., Gastroenterology, 2014](https://pubmed.ncbi.nlm.nih.gov/24076059/)
 
 Write the report now. Bullets only, no paragraphs.`;
 
@@ -509,12 +515,11 @@ Write the report now. Bullets only, no paragraphs.`;
       if (!aiReport) {
         throw new HttpsError("internal", "runCorrelationEngine: No response from Vertex AI");
       }
+      // Strip markdown formatting that Gemini may add despite instructions
+      aiReport = aiReport.replace(/^#{1,6}\s*/gm, "").replace(/\*\*/g, "");
 
-      // Ensure disclaimer is present
-      const disclaimer = "This is not medical advice";
-      if (!aiReport.includes(disclaimer)) {
-        aiReport = aiReport.trimEnd() + "\n\n" + disclaimer + " — please consult a registered dietitian or gastroenterologist for personalized guidance.";
-      }
+      // Disclaimer stored separately — do NOT append to report body (shown in UI below the report)
+      const disclaimer = "This is not medical advice. Consult a registered dietitian or gastroenterologist for personalized guidance.";
 
       // Write single report document to correlationReports collection
       const reportRef = db.collection(`users/${userId}/correlationReports`).doc();

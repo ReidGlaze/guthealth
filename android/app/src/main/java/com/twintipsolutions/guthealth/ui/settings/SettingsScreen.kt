@@ -17,7 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.google.firebase.messaging.FirebaseMessaging
@@ -463,6 +468,7 @@ fun SettingsScreen(onDismiss: () -> Unit) {
 
     // About Dialog
     if (showAboutDialog) {
+        val uriHandler = LocalUriHandler.current
         AlertDialog(
             onDismissRequest = { showAboutDialog = false },
             title = { Text("About AI Gut Health & IBS Tracker") },
@@ -495,6 +501,73 @@ fun SettingsScreen(onDismiss: () -> Unit) {
                         "This app uses anonymous authentication. We do not collect personally identifiable information. Your health data is stored securely in Firebase and can be deleted at any time from Settings.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Sources & References",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "\u2022 Monash University FODMAP research (monashfodmap.com)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "\u2022 Bristol Stool Chart — Lewis & Heaton, 1997",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "\u2022 International Foundation for Gastrointestinal Disorders (IFFGD)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "\u2022 Halmos et al. — A Diet Low in FODMAPs Reduces Symptoms of Irritable Bowel Syndrome (Gastroenterology, 2014)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Legal",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Privacy Policy link
+                    val privacyText = buildAnnotatedString {
+                        pushStringAnnotation(tag = "URL", annotation = "https://guthealth.twintipsolutions.com/privacy")
+                        withStyle(style = SpanStyle(color = TealPrimary, textDecoration = TextDecoration.Underline)) {
+                            append("Privacy Policy")
+                        }
+                        pop()
+                    }
+                    androidx.compose.foundation.text.ClickableText(
+                        text = privacyText,
+                        style = MaterialTheme.typography.bodySmall,
+                        onClick = { offset ->
+                            privacyText.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                                .firstOrNull()?.let { uriHandler.openUri(it.item) }
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    // Terms of Service link
+                    val termsText = buildAnnotatedString {
+                        pushStringAnnotation(tag = "URL", annotation = "https://guthealth.twintipsolutions.com/terms")
+                        withStyle(style = SpanStyle(color = TealPrimary, textDecoration = TextDecoration.Underline)) {
+                            append("Terms of Service")
+                        }
+                        pop()
+                    }
+                    androidx.compose.foundation.text.ClickableText(
+                        text = termsText,
+                        style = MaterialTheme.typography.bodySmall,
+                        onClick = { offset ->
+                            termsText.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                                .firstOrNull()?.let { uriHandler.openUri(it.item) }
+                        }
                     )
                 }
             },

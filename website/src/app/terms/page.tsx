@@ -37,9 +37,8 @@ export default function TermsOfService() {
       <h2>2. Not Medical Advice</h2>
       <p>
         All AI-generated content in the App, including food analyses, symptom
-        correlations, gut health scores, daily summaries, and weekly insight
-        reports, is provided for <strong>informational and educational purposes
-        only</strong>. This content does not constitute medical advice,
+        correlations, daily summaries, and insight reports, is provided
+        for <strong>informational and educational purposes only</strong>. This content does not constitute medical advice,
         professional diagnosis, or treatment recommendations.
       </p>
       <p>
