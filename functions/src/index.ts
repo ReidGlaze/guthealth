@@ -14,6 +14,22 @@ const ai = new GoogleGenAI({
 
 const db = admin.firestore();
 
+const GEMINI_MODEL = "gemini-3.8-flash";
+const GEMINI_FALLBACK_MODEL = "gemini-3-flash-preview";
+
+type GenerateParams = Omit<Parameters<typeof ai.models.generateContent>[0], "model">;
+
+// Call the primary Gemini model, falling back to the previous model if it errors
+async function generateWithFallback(params: GenerateParams) {
+  try {
+    return await ai.models.generateContent({ ...params, model: GEMINI_MODEL });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.warn(`${GEMINI_MODEL} failed, falling back to ${GEMINI_FALLBACK_MODEL}: ${msg}`);
+    return await ai.models.generateContent({ ...params, model: GEMINI_FALLBACK_MODEL });
+  }
+}
+
 // ============================================================
 // Shared helpers
 // ============================================================
@@ -88,7 +104,6 @@ const MAX_GEMINI_RETRIES = 3;
 // When treatNoJsonAsEmpty=true, prose responses with no JSON are treated as empty
 // results rather than triggering retries (used for correlation engine).
 async function callGeminiWithJsonRetry(opts: {
-  model: string;
   contents: Array<{ role: string; parts: Array<Record<string, unknown>> }>;
   config: Record<string, unknown>;
   fnName: string;
@@ -109,8 +124,7 @@ async function callGeminiWithJsonRetry(opts: {
         ];
 
     try {
-      const response = await ai.models.generateContent({
-        model: opts.model,
+      const response = await generateWithFallback({
         contents,
         config: opts.config,
       });
@@ -220,7 +234,6 @@ IMPORTANT: This is for educational wellness purposes only. Base FODMAP ratings o
 
     try {
       const jsonStr = await callGeminiWithJsonRetry({
-        model: "gemini-3-flash-preview",
         contents: [
           {
             role: "user",
@@ -298,7 +311,6 @@ This is for educational wellness tracking purposes only.`;
 
     try {
       const jsonStr = await callGeminiWithJsonRetry({
-        model: "gemini-3-flash-preview",
         contents: [
           {
             role: "user",
@@ -494,8 +506,7 @@ RULES:
 Write the report now. Bullets only, no paragraphs.`;
 
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+      const response = await generateWithFallback({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
           temperature: 0.4,
@@ -619,8 +630,7 @@ export const generateDailySummary = onSchedule(
         // Generate AI summary
         let aiSummary = "";
         try {
-          const summaryResponse = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+          const summaryResponse = await generateWithFallback({
             contents: [{
               role: "user",
               parts: [{
