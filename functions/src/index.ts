@@ -246,6 +246,7 @@ IMPORTANT: This is for educational wellness purposes only. Base FODMAP ratings o
         config: {
           temperature: 0.2,
           maxOutputTokens: 4096,
+          responseMimeType: "application/json",
           thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         },
         fnName: "analyzeFoodPhoto",
@@ -323,6 +324,7 @@ This is for educational wellness tracking purposes only.`;
         config: {
           temperature: 0.1,
           maxOutputTokens: 512,
+          responseMimeType: "application/json",
           thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         },
         fnName: "classifyPoopPhoto",
