@@ -11,7 +11,7 @@ Reid Glaze — Twin Tip Solutions LLC
 
 ## Tech Stack
 - **Backend**: GCP Firebase (Firestore, Storage, Auth, Cloud Functions, Messaging)
-- **Cloud Functions**: TypeScript, Node 22, `@google/genai` SDK with `gemini-3-flash-preview`
+- **Cloud Functions**: TypeScript, Node 22, `@google/genai` SDK with `gemini-3.8-flash` (falls back to `gemini-3-flash-preview`)
 - **iOS**: Swift 6.1+, SwiftUI, iOS 18.0+, SPM only (no CocoaPods)
 - **Android**: Kotlin, Jetpack Compose, CameraX, Gradle with version catalog
 - **Monetization**: Free (no paywall)
@@ -140,15 +140,15 @@ Reid Glaze — Twin Tip Solutions LLC
 
 ### 1. `analyzeFoodPhoto` (onCall)
 - **Input**: `{ imageBase64: string, mealType?: string }`
-- **Process**: Send photo to Gemini 3 Flash → identify foods, FODMAP levels, triggers
+- **Process**: Send photo to Gemini 3.8 Flash → identify foods, FODMAP levels, triggers
 - **Output**: `{ foods: Food[] }`
-- **Model**: `gemini-3-flash-preview` with LOW thinking (fast response needed)
+- **Model**: `gemini-3.8-flash` with MINIMAL thinking (fast response needed)
 
 ### 2. `classifyPoopPhoto` (onCall)
 - **Input**: `{ imageBase64: string }`
 - **Process**: Send photo to Gemini → Bristol Stool Chart classification + color detection + observations
 - **Output**: `{ bristolType: number, color: string, observations: string }`
-- **Model**: `gemini-3-flash-preview` with LOW thinking
+- **Model**: `gemini-3.8-flash` with MINIMAL thinking
 
 ### 3. `runCorrelationEngine` (onCall)
 - **Input**: `{ userId: string, daysBack?: 3 | 7 | 10 }`
@@ -157,7 +157,7 @@ Reid Glaze — Twin Tip Solutions LLC
 - **Poop as signal**: Abnormal Bristol types (1-2, 6-7) count as "something went wrong" even without an explicit symptom log. Poop data also strengthens/weakens meal→symptom correlations.
 - **No numerical confidence scores**: AI writes plain-English narrative explaining what patterns it sees, how strong they are, and why (e.g., "You ate onions 4 times this week. Three of those times you had bloating within a few hours and your stool shifted from Type 4 to Type 6.")
 - **Output**: Writes a single `correlationReports` document with the full narrative. Past reports are stored so users can look back over time.
-- **Model**: `gemini-3-flash-preview` with HIGH thinking (complex analysis)
+- **Model**: `gemini-3.8-flash` with MEDIUM thinking (complex analysis)
 
 ### 4. `generateDailySummary` (onSchedule — every day 11pm user's timezone)
 - **Process**: Aggregate day's meals, symptoms, poop logs → generate summary
@@ -273,7 +273,7 @@ Bottom navigation bar with Dashboard, Log, FODMAP Guide, Insights tabs.
 - **Tools**: Bash (firebase emulators), Edit/Write
 - **Workflow**: Write TypeScript → build → deploy to emulator → test with curl → verify Firestore writes → fix → iterate
 - **Architecture**: Follow patterns from ACL Rehab Tracker's index.ts. Use `@google/genai` SDK, `onCall` for client functions, `onSchedule` for cron jobs.
-- **Model**: `gemini-3-flash-preview` with Vertex AI global endpoint
+- **Model**: `gemini-3.8-flash` with Vertex AI global endpoint
 
 ### Development Order
 1. **functions-dev** builds backend first (Firestore model, all 5 Cloud Functions)

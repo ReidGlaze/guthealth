@@ -247,7 +247,7 @@ IMPORTANT: This is for educational wellness purposes only. Base FODMAP ratings o
           temperature: 0.2,
           maxOutputTokens: 4096,
           responseMimeType: "application/json",
-          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
         },
         fnName: "analyzeFoodPhoto",
       });
@@ -325,7 +325,7 @@ This is for educational wellness tracking purposes only.`;
           temperature: 0.1,
           maxOutputTokens: 512,
           responseMimeType: "application/json",
-          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
         },
         fnName: "classifyPoopPhoto",
       });
@@ -513,7 +513,7 @@ Write the report now. Bullets only, no paragraphs.`;
         config: {
           temperature: 0.4,
           maxOutputTokens: 8192,
-          thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
+          thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
           httpOptions: { timeout: 240_000 },
         },
       });
@@ -644,7 +644,7 @@ Be encouraging and brief. Educational wellness content only.`,
             config: {
               temperature: 0.7,
               maxOutputTokens: 256,
-              thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+              thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
             },
           });
           aiSummary = summaryResponse.text || "";
