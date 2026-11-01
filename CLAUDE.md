@@ -142,13 +142,13 @@ Reid Glaze — Twin Tip Solutions LLC
 - **Input**: `{ imageBase64: string, mealType?: string }`
 - **Process**: Send photo to Gemini 3.8 Flash → identify foods, FODMAP levels, triggers
 - **Output**: `{ foods: Food[] }`
-- **Model**: `gemini-3.8-flash` with MINIMAL thinking (fast response needed)
+- **Model**: `gemini-3.8-flash` with LOW thinking (3.8 rejects MINIMAL) (fast response needed)
 
 ### 2. `classifyPoopPhoto` (onCall)
 - **Input**: `{ imageBase64: string }`
 - **Process**: Send photo to Gemini → Bristol Stool Chart classification + color detection + observations
 - **Output**: `{ bristolType: number, color: string, observations: string }`
-- **Model**: `gemini-3.8-flash` with MINIMAL thinking
+- **Model**: `gemini-3.8-flash` with LOW thinking (3.8 rejects MINIMAL)
 
 ### 3. `runCorrelationEngine` (onCall)
 - **Input**: `{ userId: string, daysBack?: 3 | 7 | 10 }`
