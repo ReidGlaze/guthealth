@@ -646,6 +646,7 @@ public struct DashboardView: View {
     private func deleteSymptomConfirmed() async {
         guard let uid = authService.currentUserId, let symptom = symptomToDelete, let id = symptom.id else { return }
         try? await FirestoreService.shared.deleteSymptom(uid: uid, symptomId: id)
+        await HealthKitService.shared.deleteSymptom(id: id)
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         symptomToDelete = nil
         await loadEntriesForDate()

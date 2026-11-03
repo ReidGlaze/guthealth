@@ -695,9 +695,10 @@ struct SymptomLogSheet: View {
             location: selectedLocation,
             notes: notes
         )
-        if (try? await FirestoreService.shared.saveSymptom(uid: uid, symptom: symptom)) != nil {
+        if let symptomId = try? await FirestoreService.shared.saveSymptom(uid: uid, symptom: symptom) {
             // Counts toward engagement, but never prompt right after logging a symptom.
             ReviewPrompter.recordLog(isPositiveMoment: false)
+            Task { await HealthKitService.shared.saveSymptom(symptom, id: symptomId) }
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         dismiss()

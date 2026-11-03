@@ -6,8 +6,8 @@
 // ==========================================
 PRODUCT_NAME = GutHealth
 PRODUCT_BUNDLE_IDENTIFIER = com.twintipsolutions.guthealth
-MARKETING_VERSION = 1.0
-CURRENT_PROJECT_VERSION = 4
+MARKETING_VERSION = 1.1
+CURRENT_PROJECT_VERSION = 5
 
 // ==========================================
 // Platform Configuration
@@ -30,3 +30,5 @@ INFOPLIST_KEY_UILaunchScreen_Generation = YES
 // Entitlements
 // ==========================================
 CODE_SIGN_ENTITLEMENTS = Config/GutHealth.entitlements
+INFOPLIST_KEY_NSHealthUpdateUsageDescription = AI Gut Health saves the symptoms you log (bloating, cramping, constipation, diarrhea, heartburn, nausea) to Apple Health so your health data is in one place.
+INFOPLIST_KEY_NSHealthShareUsageDescription = AI Gut Health only writes symptoms to Apple Health. It does not read your Apple Health data.

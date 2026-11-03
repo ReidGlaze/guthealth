@@ -12,6 +12,8 @@ public struct SettingsView: View {
     @State private var dinnerReminder = true
     @State private var dinnerTime = defaultTime(hour: 18, minute: 0)
     @State private var notificationsEnabled = false
+    @State private var appleHealthEnabled = HealthKitService.shared.isEnabled
+    @State private var showHealthDeniedAlert = false
     @State private var isLoading = true
     @State private var showDeleteConfirmation = false
     @State private var showSignOutConfirmation = false
@@ -25,6 +27,9 @@ public struct SettingsView: View {
             List {
                 reminderTimesSection
                 notificationsSection
+                if HealthKitService.shared.isAvailable {
+                    appleHealthSection
+                }
                 appInfoSection
                 disclaimerSection
                 accountSection
@@ -53,6 +58,11 @@ public struct SettingsView: View {
                 }
             } message: {
                 Text("You will need to sign in again to access your data.")
+            }
+            .alert("Apple Health Access Off", isPresented: $showHealthDeniedAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("To sync symptoms, open the Health app → your profile → Apps → AI Gut Health, and turn on the symptom categories.")
             }
             .sheet(isPresented: $showDisclaimer) {
                 disclaimerSheet
@@ -132,6 +142,49 @@ public struct SettingsView: View {
             }
         } header: {
             Text("Notifications")
+        }
+    }
+
+    // MARK: - Apple Health
+
+    private var appleHealthSection: some View {
+        Section {
+            Toggle(isOn: $appleHealthEnabled) {
+                HStack {
+                    Image(systemName: "heart.fill")
+                        .foregroundColor(.pink)
+                        .frame(width: 24)
+                    Text("Sync to Apple Health")
+                }
+            }
+            .tint(AppColors.primary)
+            .onChange(of: appleHealthEnabled) { _, enabled in
+                Task { await toggleAppleHealth(enabled) }
+            }
+        } header: {
+            Text("Apple Health")
+        } footer: {
+            Text("Saves bloating, cramping, constipation, diarrhea, heartburn, and nausea logs to Apple Health. Gas and general pain aren't supported by Apple Health. Nothing is read from Apple Health.")
+        }
+    }
+
+    private func toggleAppleHealth(_ enabled: Bool) async {
+        let healthKit = HealthKitService.shared
+        guard enabled else {
+            healthKit.isEnabled = false
+            return
+        }
+        guard healthKit.isEnabled == false else { return }
+        guard await healthKit.requestAuthorization() else {
+            appleHealthEnabled = false
+            showHealthDeniedAlert = true
+            return
+        }
+        healthKit.isEnabled = true
+        // Backfill recent symptoms so Apple Health isn't empty on day one.
+        if let uid = authService.currentUserId,
+           let symptoms = try? await FirestoreService.shared.getSymptoms(uid: uid, limit: 500) {
+            await healthKit.saveSymptoms(symptoms)
         }
     }
 
@@ -424,6 +477,8 @@ public struct SettingsView: View {
     private func deleteAllData() async {
         guard let uid = authService.currentUserId else { return }
         try? await FirestoreService.shared.deleteUserData(uid: uid)
+        await HealthKitService.shared.deleteAllSymptoms()
+        HealthKitService.shared.isEnabled = false
         try? await authService.deleteUser()
     }
 
