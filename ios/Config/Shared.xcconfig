@@ -32,3 +32,4 @@ INFOPLIST_KEY_UILaunchScreen_Generation = YES
 CODE_SIGN_ENTITLEMENTS = Config/GutHealth.entitlements
 INFOPLIST_KEY_NSHealthUpdateUsageDescription = AI Gut Health saves the symptoms you log (bloating, cramping, constipation, diarrhea, heartburn, nausea) to Apple Health so your health data is in one place.
 INFOPLIST_KEY_NSHealthShareUsageDescription = AI Gut Health only writes symptoms to Apple Health. It does not read your Apple Health data.
+INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO
