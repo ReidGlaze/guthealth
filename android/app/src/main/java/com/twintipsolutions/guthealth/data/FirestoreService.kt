@@ -5,6 +5,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageMetadata
@@ -278,16 +279,40 @@ class FirestoreService {
     }
 
     suspend fun updateFodmapPhase(phase: String) {
-        userDoc().update(
+        updateUserProfile(
             mapOf(
                 "fodmapPhase" to phase,
                 "fodmapPhaseStartDate" to Timestamp.now()
             )
-        ).await()
+        )
     }
 
+    /**
+     * Creates or updates the user's profile. Accepts dotted keys ("preferences.timezone").
+     * Uses a merge write instead of update(): the profile document may not exist yet, and
+     * update() fails on a missing document (which silently dropped notification opt-ins).
+     */
     suspend fun updateUserProfile(fields: Map<String, Any>) {
-        userDoc().update(fields).await()
+        userDoc().set(nested(fields), SetOptions.merge()).await()
+    }
+
+    companion object {
+        /** Converts dotted keys into nested maps so merge writes update nested fields. */
+        fun nested(fields: Map<String, Any>): Map<String, Any> {
+            val result = mutableMapOf<String, Any>()
+            for ((key, value) in fields) {
+                val parts = key.split(".")
+                var node = result
+                for (part in parts.dropLast(1)) {
+                    @Suppress("UNCHECKED_CAST")
+                    node = node.getOrPut(part) { mutableMapOf<String, Any>() } as MutableMap<String, Any>
+                }
+                node[parts.last()] = value
+            }
+            return result
+        }
+
+        val DEFAULT_REMINDER_TIMES = listOf("08:00", "12:00", "18:00")
     }
 
     suspend fun deleteUserData() {

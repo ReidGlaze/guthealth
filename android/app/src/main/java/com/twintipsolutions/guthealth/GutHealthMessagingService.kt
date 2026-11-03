@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import java.util.TimeZone
@@ -32,11 +33,13 @@ class GutHealthMessagingService : FirebaseMessagingService() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val timezone = TimeZone.getDefault().id
         FirebaseFirestore.getInstance().collection("users").document(uid)
-            .update(
+            // Merge write: the profile document may not exist yet (update() would fail).
+            .set(
                 mapOf(
                     "fcmToken" to token,
-                    "preferences.timezone" to timezone
-                )
+                    "preferences" to mapOf("timezone" to timezone)
+                ),
+                SetOptions.merge()
             )
     }
 

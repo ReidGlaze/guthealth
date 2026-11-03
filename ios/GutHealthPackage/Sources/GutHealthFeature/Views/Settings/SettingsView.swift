@@ -466,6 +466,9 @@ public struct SettingsView: View {
             if lunchReminder { times.append(formatTime(lunchTime)) }
             if dinnerReminder { times.append(formatTime(dinnerTime)) }
             fields["preferences.reminderTimes"] = times
+            if let token = await NotificationHelper.fcmToken() {
+                fields["fcmToken"] = token
+            }
         }
         try? await FirestoreService.shared.updateUserProfile(uid: uid, fields: fields)
     }

@@ -305,9 +305,18 @@ public struct OnboardingView: View {
         defer { isSaving = false }
 
         if let uid = authService.currentUserId {
-            try? await FirestoreService.shared.updateUserProfile(uid: uid, fields: [
-                "preferences.notificationsEnabled": remindersEnabled
-            ])
+            var fields: [String: Any] = [
+                "preferences.notificationsEnabled": remindersEnabled,
+                "preferences.timezone": TimeZone.current.identifier,
+            ]
+            if remindersEnabled {
+                // The reminder job needs times and a device token, not just the flag.
+                fields["preferences.reminderTimes"] = NotificationHelper.defaultReminderTimes
+                if let token = await NotificationHelper.fcmToken() {
+                    fields["fcmToken"] = token
+                }
+            }
+            try? await FirestoreService.shared.updateUserProfile(uid: uid, fields: fields)
         }
 
         hasCompletedOnboarding = true

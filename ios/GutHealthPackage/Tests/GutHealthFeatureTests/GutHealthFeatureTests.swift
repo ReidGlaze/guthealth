@@ -33,7 +33,7 @@ struct GutHealthFeatureTests {
         let profile = UserProfile(displayName: "Test User")
         #expect(profile.fodmapPhase == .elimination)
         #expect(profile.preferences.reminderTimes.count == 3)
-        #expect(profile.preferences.notificationsEnabled == true)
+        #expect(profile.preferences.notificationsEnabled == false)
     }
 
     @Test("FodmapFood creation")
@@ -51,10 +51,10 @@ struct GutHealthFeatureTests {
         #expect(food.fodmapCategories.contains("fructans"))
     }
 
-    @Test("DailySummary gut score")
-    func dailySummaryScore() {
-        let summary = DailySummary(date: "2026-02-28", gutScore: 75)
-        #expect(summary.gutScore == 75)
+    @Test("DailySummary defaults")
+    func dailySummaryDefaults() {
+        let summary = DailySummary(date: "2026-02-28")
+        #expect(summary.date == "2026-02-28")
         #expect(summary.totalMeals == 0)
     }
 

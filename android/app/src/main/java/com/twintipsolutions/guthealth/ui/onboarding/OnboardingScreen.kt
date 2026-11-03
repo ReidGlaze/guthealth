@@ -171,6 +171,8 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                                         "preferences.timezone" to TimeZone.getDefault().id
                                     )
                                     if (remindersEnabled) {
+                                        // The reminder job needs times, not just the flag.
+                                        fields["preferences.reminderTimes"] = FirestoreService.DEFAULT_REMINDER_TIMES
                                         try {
                                             val token = FirebaseMessaging.getInstance().token.await()
                                             fields["fcmToken"] = token

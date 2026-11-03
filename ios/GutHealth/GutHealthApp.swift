@@ -29,10 +29,11 @@ final class FCMTokenHandler: NSObject, MessagingDelegate, @unchecked Sendable {
         guard let token = fcmToken else { return }
         guard let uid = Auth.auth().currentUser?.uid else { return }
         let timezone = TimeZone.current.identifier
-        Firestore.firestore().collection("users").document(uid).updateData([
+        // Merge write: the profile document may not exist yet (updateData would fail).
+        Firestore.firestore().collection("users").document(uid).setData([
             "fcmToken": token,
-            "preferences.timezone": timezone
-        ]) { error in
+            "preferences": ["timezone": timezone]
+        ], merge: true) { error in
             if let error = error {
                 print("Failed to save FCM token: \(error.localizedDescription)")
             }

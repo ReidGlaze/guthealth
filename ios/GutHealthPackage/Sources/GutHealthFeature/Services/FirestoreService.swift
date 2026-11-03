@@ -22,8 +22,36 @@ public actor FirestoreService {
         return profile
     }
 
+    /// Creates or updates the user's profile. Accepts dotted keys ("preferences.timezone").
+    ///
+    /// Uses a merge write rather than updateData: the profile document may not exist yet,
+    /// and updateData fails on a missing document (which silently dropped notification
+    /// opt-ins and FCM tokens).
     public func updateUserProfile(uid: String, fields: [String: Any]) async throws {
-        try await db.collection("users").document(uid).updateData(fields)
+        try await db.collection("users").document(uid).setData(Self.nested(fields), merge: true)
+    }
+
+    /// Converts dotted keys into nested maps so a merge write updates nested fields
+    /// instead of creating top-level fields literally named "preferences.timezone".
+    public static func nested(_ fields: [String: Any]) -> [String: Any] {
+        var result: [String: Any] = [:]
+        for (key, value) in fields {
+            let parts = key.split(separator: ".").map(String.init)
+            result = insert(value, at: parts[...], into: result)
+        }
+        return result
+    }
+
+    private static func insert(_ value: Any, at path: ArraySlice<String>, into dict: [String: Any]) -> [String: Any] {
+        var dict = dict
+        guard let head = path.first else { return dict }
+        if path.count == 1 {
+            dict[head] = value
+        } else {
+            let child = dict[head] as? [String: Any] ?? [:]
+            dict[head] = insert(value, at: path.dropFirst(), into: child)
+        }
+        return dict
     }
 
     // MARK: - Meals
