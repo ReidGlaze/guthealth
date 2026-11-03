@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
     <article className="prose prose-gray mx-auto max-w-3xl px-6 py-12">
       <h1>Privacy Policy</h1>
       <p className="text-sm text-gray-500">
-        Effective: March 11, 2026 &middot; Last updated: March 11, 2026
+        Effective: March 11, 2026 &middot; Last updated: November 3, 2026
       </p>
 
       <p>
@@ -66,9 +66,27 @@ export default function PrivacyPolicy() {
         </li>
       </ul>
       <p>
-        This data is <strong>not</strong> integrated with Apple HealthKit, Google
-        Health Connect, or any other platform health framework. The App is an
-        educational wellness tool and does not function as a medical device.
+        The App is an educational wellness tool and does not function as a
+        medical device.
+      </p>
+
+      <h3>Apple Health (HealthKit)</h3>
+      <p>
+        On iOS, you can optionally turn on &quot;Sync to Apple Health&quot; in
+        the App&apos;s settings. It is off by default. When enabled, the App
+        writes the symptoms you log (bloating, abdominal cramps, constipation,
+        diarrhea, heartburn, and nausea, with their severity and time) to Apple
+        Health on your device. The App does <strong>not</strong> read any data
+        from Apple Health.
+      </p>
+      <p>
+        Data written to Apple Health is stored by Apple on your device under
+        your control. We never use Apple Health data for advertising or
+        marketing, never sell it, and never share it with third parties. You can
+        turn the sync off at any time in the App&apos;s settings, and manage or
+        revoke access in the Health app. Deleting a symptom in the App also
+        removes its copy from Apple Health. The App does not integrate with
+        Google Health Connect.
       </p>
 
       <h2>3. Photos</h2>
@@ -215,7 +233,9 @@ export default function PrivacyPolicy() {
         When you request account deletion, all meal logs, symptom logs, poop
         logs, photos, correlation reports, daily summaries, and preferences
         associated with your anonymous user ID are permanently removed from our
-        systems, including Firebase Firestore and Cloud Storage.
+        systems, including Firebase Firestore and Cloud Storage. If Apple
+        Health sync is enabled, symptom entries the App wrote to Apple Health
+        are also removed.
       </p>
 
       <h2>11. Children&apos;s Privacy (COPPA)</h2>
