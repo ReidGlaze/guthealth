@@ -15,8 +15,6 @@ import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
-import android.app.Activity
-import android.content.Context
 import android.view.HapticFeedbackConstants
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,11 +25,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.Timestamp
 import com.twintipsolutions.guthealth.data.FirestoreService
 import com.twintipsolutions.guthealth.data.models.CorrelationReport
 import com.twintipsolutions.guthealth.ui.theme.TealPrimary
+import com.twintipsolutions.guthealth.util.ReviewPrompter
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -170,7 +168,7 @@ fun InsightsScreen() {
                                     )
                                     correlationReports = listOf(report) + correlationReports
                                     view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                                    requestInAppReview(context)
+                                    ReviewPrompter.recordCorrelationReport(context)
                                 }
                             } catch (e: Exception) {
                                 analysisError = "Analysis failed: ${e.localizedMessage ?: "Unknown error"}"
@@ -494,20 +492,6 @@ private fun CorrelationReportCard(report: CorrelationReport, onDelete: () -> Uni
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 )
             }
-        }
-    }
-}
-
-private fun requestInAppReview(context: Context) {
-    val prefs = context.getSharedPreferences("gut_health_prefs", Context.MODE_PRIVATE)
-    val count = prefs.getInt("correlationReportCount", 0) + 1
-    prefs.edit().putInt("correlationReportCount", count).apply()
-    // Prompt after 1st and every 3rd report thereafter
-    if (count == 1 || (count > 1 && count % 3 == 0)) {
-        val activity = context as? Activity ?: return
-        val reviewManager = ReviewManagerFactory.create(context)
-        reviewManager.requestReviewFlow().addOnSuccessListener { reviewInfo ->
-            reviewManager.launchReviewFlow(activity, reviewInfo)
         }
     }
 }

@@ -410,11 +410,8 @@ public struct InsightsView: View {
     }
 
     private func requestInAppReview() {
-        let key = "correlationReportCount"
-        let count = UserDefaults.standard.integer(forKey: key) + 1
-        UserDefaults.standard.set(count, forKey: key)
         // Prompt after 1st and every 3rd report thereafter
-        if count == 1 || (count > 1 && count % 3 == 0) {
+        if ReviewPrompter.recordCorrelationReport() {
             requestReview()
         }
     }

@@ -8,6 +8,7 @@ public struct LogView: View {
     @State private var showingSymptomLog = false
     @State private var showingPoopLog = false
     @State private var successMessage: String?
+    @Environment(\.requestReview) private var requestReview
 
     public init() {}
 
@@ -29,15 +30,24 @@ public struct LogView: View {
                     successToast(msg)
                 }
             }
-            .fullScreenCover(isPresented: $showingMealLog) {
+            .fullScreenCover(isPresented: $showingMealLog, onDismiss: requestReviewIfEarned) {
                 MealLogSheet(successMessage: $successMessage)
             }
-            .fullScreenCover(isPresented: $showingSymptomLog) {
+            .fullScreenCover(isPresented: $showingSymptomLog, onDismiss: requestReviewIfEarned) {
                 SymptomLogSheet(successMessage: $successMessage)
             }
-            .fullScreenCover(isPresented: $showingPoopLog) {
+            .fullScreenCover(isPresented: $showingPoopLog, onDismiss: requestReviewIfEarned) {
                 PoopLogSheet(successMessage: $successMessage)
             }
+        }
+    }
+
+    /// Runs after a log sheet fully dismisses, so the rating prompt appears over the Log tab.
+    private func requestReviewIfEarned() {
+        guard ReviewPrompter.consumePendingPrompt() else { return }
+        Task {
+            try? await Task.sleep(for: .seconds(1))
+            requestReview()
         }
     }
 
@@ -469,6 +479,7 @@ struct MealLogSheet: View {
             meal.aiAnalysis = AIAnalysis(rawResponse: "AI analyzed", analyzedAt: Date())
         }
         guard let mealId = try? await FirestoreService.shared.saveMeal(uid: uid, meal: meal) else { return }
+        ReviewPrompter.recordLog(isPositiveMoment: true)
 
         // Upload photo to Storage in background (non-blocking)
         if let image = capturedImage {
@@ -684,7 +695,10 @@ struct SymptomLogSheet: View {
             location: selectedLocation,
             notes: notes
         )
-        _ = try? await FirestoreService.shared.saveSymptom(uid: uid, symptom: symptom)
+        if (try? await FirestoreService.shared.saveSymptom(uid: uid, symptom: symptom)) != nil {
+            // Counts toward engagement, but never prompt right after logging a symptom.
+            ReviewPrompter.recordLog(isPositiveMoment: false)
+        }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         dismiss()
         successMessage = "Symptom logged!"
@@ -1110,6 +1124,8 @@ struct PoopLogSheet: View {
             notes: notes
         )
         guard let logId = try? await FirestoreService.shared.savePoopLog(uid: uid, log: log) else { return }
+        // Only Bristol 3–4 (normal) is a good moment to ask.
+        ReviewPrompter.recordLog(isPositiveMoment: (3...4).contains(bristolType))
 
         // Upload photo to Storage in background (non-blocking)
         if let image = capturedImage {

@@ -86,7 +86,7 @@ private val colorOptions = listOf(
 @Composable
 fun PoopLogSheet(
     onDismiss: () -> Unit,
-    onSaved: () -> Unit,
+    onSaved: (bristolType: Int) -> Unit,
     onError: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
@@ -611,7 +611,7 @@ fun PoopLogSheet(
                                 } catch (_: Exception) { }
                             }
                         }
-                        onSaved()
+                        onSaved(bristol)
                     } catch (_: Exception) {
                         onError()
                     } finally {

@@ -21,10 +21,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import android.view.HapticFeedbackConstants
 import com.twintipsolutions.guthealth.ui.theme.TealPrimary
+import com.twintipsolutions.guthealth.util.ReviewPrompter
 
 private enum class ActiveSheet {
     NONE, MEAL, SYMPTOM, POOP
@@ -34,6 +36,7 @@ private enum class ActiveSheet {
 @Composable
 fun LogScreen() {
     val view = LocalView.current
+    val context = LocalContext.current
     var activeSheet by remember { mutableStateOf(ActiveSheet.NONE) }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -67,6 +70,7 @@ fun LogScreen() {
                             view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                             activeSheet = ActiveSheet.NONE
                             snackbarMessage = "Meal saved!"
+                            ReviewPrompter.recordLog(context, isPositiveMoment = true)
                         },
                         onError = {
                             view.performHapticFeedback(HapticFeedbackConstants.REJECT)
@@ -83,6 +87,8 @@ fun LogScreen() {
                             view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                             activeSheet = ActiveSheet.NONE
                             snackbarMessage = "Symptom logged!"
+                            // Counts toward engagement, but never prompt right after a symptom.
+                            ReviewPrompter.recordLog(context, isPositiveMoment = false)
                         },
                         onError = {
                             view.performHapticFeedback(HapticFeedbackConstants.REJECT)
@@ -95,10 +101,12 @@ fun LogScreen() {
                 Box(modifier = Modifier.padding(padding)) {
                     PoopLogSheet(
                         onDismiss = { activeSheet = ActiveSheet.NONE },
-                        onSaved = {
+                        onSaved = { bristolType ->
                             view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                             activeSheet = ActiveSheet.NONE
                             snackbarMessage = "Poop log saved!"
+                            // Only Bristol 3–4 (normal) is a good moment to ask.
+                            ReviewPrompter.recordLog(context, isPositiveMoment = bristolType in 3..4)
                         },
                         onError = {
                             view.performHapticFeedback(HapticFeedbackConstants.REJECT)
