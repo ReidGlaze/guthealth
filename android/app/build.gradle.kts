@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.twintipsolutions.guthealth"
-    compileSdk = 35
+    compileSdk = 36
 
     val keystorePropertiesFile = rootProject.file("keystore.properties")
     val keystoreProperties = Properties().apply {
@@ -29,8 +29,8 @@ android {
     defaultConfig {
         applicationId = "com.twintipsolutions.guthealth"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 5
+        targetSdk = 36
+        versionCode = 6
         versionName = "1.1"
     }
 
